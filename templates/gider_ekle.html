@@ -1,129 +1,124 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gider Ekle</title>
+{% extends "base.html" %}
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+{% block title %}Giderler | FinansTakip{% endblock %}
+{% block page_title %}Giderler{% endblock %}
+{% block page_subtitle %}Seçili finans türüne ait gider kayıtlarını ekle, filtrele ve yönet.{% endblock %}
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a class="navbar-brand" href="/">💰 Bütçe Takip</a>
+{% block content %}
+{% if hata %}
+    <div class="alert alert-danger">{{ hata }}</div>
+{% endif %}
 
-        <div class="navbar-nav">
-            <a class="nav-link" href="/">🏠 Ana Sayfa</a>
-            <a class="nav-link" href="/gelir-ekle/">💵 Gelirler</a>
-            <a class="nav-link" href="/gider-ekle/">💸 Giderler</a>
-            <a class="nav-link" href="/raporlar/">📊 Raporlar</a>
+<div class="row g-4">
+    <div class="col-xl-4">
+        <div class="card p-4">
+            <h2 class="section-title">Gider Ekle</h2>
+            <form method="POST" class="d-grid gap-3">
+                {% csrf_token %}
+                <div>
+                    <label for="finans_turu" class="form-label">Finans Türü</label>
+                    <select id="finans_turu" name="finans_turu" class="form-select">
+                        {% for deger, etiket in finans_turleri %}
+                            <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="tarih" class="form-label">Tarih</label>
+                    <input id="tarih" type="date" name="tarih" class="form-control" required>
+                </div>
+                <div>
+                    <label for="aciklama" class="form-label">Açıklama</label>
+                    <input id="aciklama" type="text" name="aciklama" class="form-control" required>
+                </div>
+                <div>
+                    <label for="tutar" class="form-label">Tutar</label>
+                    <input id="tutar" type="number" step="0.01" name="tutar" class="form-control" required>
+                </div>
+                <div>
+                    <label for="kategori" class="form-label">Kategori</label>
+                    <select id="kategori" name="kategori" class="form-select" required>
+                        {% for kategori in gider_kategorileri %}
+                            <option value="{{ kategori.id }}">{{ kategori.ad }}</option>
+                        {% empty %}
+                            <option value="">Önce gider kategorisi ekleyin</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-danger btn-icon"><i class="bi bi-check2-circle"></i>Kaydet</button>
+                    <a href="/kategoriler/?finans_turu={{ secilen_finans_turu }}" class="btn btn-outline-primary btn-icon"><i class="bi bi-tags"></i>Kategoriler</a>
+                </div>
+            </form>
         </div>
     </div>
-</nav>
 
-<div class="container mt-5">
-    <div class="card p-4 shadow">
-
-        <h2>💸 Gider Ekle</h2>
-
-        <form method="POST">
-            {% csrf_token %}
-
-            <div class="mb-3">
-                <label>Tarih</label>
-                <input type="date" name="tarih" class="form-control">
+    <div class="col-xl-8">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h2 class="section-title mb-0">Gider Listesi</h2>
+                <a href="/gider-ekle/?finans_turu={{ secilen_finans_turu }}" class="btn btn-outline-secondary btn-sm btn-icon"><i class="bi bi-arrow-clockwise"></i>Temizle</a>
             </div>
-
-            <div class="mb-3">
-                <label>Açıklama</label>
-                <input type="text" name="aciklama" class="form-control">
+            <form method="GET" class="row g-3 mb-4">
+                <div class="col-md-6 col-lg-3">
+                    <label class="form-label">Finans Türü</label>
+                    <select name="finans_turu" class="form-select">
+                        {% for deger, etiket in finans_turleri %}
+                            <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <label class="form-label">Başlangıç</label>
+                    <input type="date" name="baslangic" class="form-control">
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <label class="form-label">Bitiş</label>
+                    <input type="date" name="bitis" class="form-control">
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <label class="form-label">Kategori</label>
+                    <select name="kategori" class="form-select">
+                        <option value="">Tüm Kategoriler</option>
+                        {% for kategori in gider_kategorileri %}
+                            <option value="{{ kategori.ad }}">{{ kategori.ad }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-secondary btn-icon"><i class="bi bi-funnel"></i>Filtrele</button>
+                </div>
+            </form>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th>Açıklama</th>
+                            <th>Kategori</th>
+                            <th class="text-end">Tutar</th>
+                            <th class="text-end">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for gider in giderler %}
+                            <tr>
+                                <td>{{ gider.tarih }}</td>
+                                <td>{{ gider.aciklama }}</td>
+                                <td><span class="badge text-bg-light border">{{ gider.kategori }}</span></td>
+                                <td class="text-end fw-bold text-danger">{{ gider.tutar }} TL</td>
+                                <td class="text-end">
+                                    <a href="/gider-duzenle/{{ gider.id }}/" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="bi bi-pencil-square"></i></a>
+                                    <a href="/gider-sil/{{ gider.id }}/" class="btn btn-sm btn-outline-danger" title="Sil"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5" class="empty-state">Henüz gider kaydı yok.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-
-            <div class="mb-3">
-                <label>Tutar</label>
-                <input type="number" step="0.01" name="tutar" class="form-control">
-            </div>
-
-            <div class="mb-3">
-                <label>Kategori</label>
-                <select name="kategori" class="form-control">
-    <option value="Yemek">Yemek</option>
-    <option value="Market">Market</option>
-    <option value="Fatura">Fatura</option>
-    <option value="Kira">Kira</option>
-    <option value="Ulaşım">Ulaşım</option>
-    <option value="Sağlık">Sağlık</option>
-    <option value="Diğer">Diğer</option>
-</select>
-            </div>
-
-            <button class="btn btn-danger">
-                Kaydet
-            </button>
-            <a href="/" class="btn btn-secondary mt-2">
-                Ana Sayfaya Dön
-            </a>
-        </form>
-
-        <hr>
-
-        <h4>Gider Listesi</h4>
-
-<form method="GET" class="row mb-3">
-    <div class="col">
-        <input type="date" name="baslangic" class="form-control">
-    </div>
-    <div class="col">
-        <input type="date" name="bitis" class="form-control">
-    </div>
-    <div class="col">
-    <select name="kategori" class="form-control">
-        <option value="">Tüm Kategoriler</option>
-        <option value="Yemek">Yemek</option>
-        <option value="Market">Market</option>
-        <option value="Fatura">Fatura</option>
-        <option value="Kira">Kira</option>
-        <option value="Ulaşım">Ulaşım</option>
-        <option value="Sağlık">Sağlık</option>
-        <option value="Diğer">Diğer</option>
-    </select>
-</div>
-    <div class="col">
-        <button class="btn btn-secondary">Filtrele</button>
-        <a href="/gider-ekle/" class="btn btn-outline-secondary">Temizle</a>
-    </div>
-</form>
-
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Tarih</th>
-                    <th>Açıklama</th>
-                    <th>Tutar</th>
-                    <th>Kategori</th>
-                    <th>İşlem</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for gider in giderler %}
-                <tr>
-                    <td>{{ gider.tarih }}</td>
-                    <td>{{ gider.aciklama }}</td>
-                    <td>{{ gider.tutar }} TL</td>
-                    <td>{{ gider.kategori }}</td>
-                    <td>
-    <a href="/gider-duzenle/{{ gider.id }}/" class="btn btn-sm btn-warning">Düzenle</a>
-    <a href="/gider-sil/{{ gider.id }}/" class="btn btn-sm btn-danger">Sil</a>
-</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
+        </div>
     </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Kayıt Ol | FinansTakip{% endblock %}
+
+{% block auth_content %}
+<div class="card auth-card p-4">
+    <div class="text-center mb-4">
+        <span class="metric-icon bg-success text-white mb-3"><i class="bi bi-person-plus"></i></span>
+        <h1 class="h3 fw-bold mb-1">Kayıt Ol</h1>
+        <p class="text-muted mb-0">Yeni FinansTakip hesabı oluştur.</p>
+    </div>
+
+    <form method="POST" class="d-grid gap-3">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div class="alert alert-danger">Lütfen formdaki bilgileri kontrol edin.</div>
+        {% endif %}
+        <div>
+            <label class="form-label">Kullanıcı Adı</label>
+            <input type="text" name="username" class="form-control" value="{{ form.username.value|default:'' }}" required>
+            {% for error in form.username.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div>
+            <label class="form-label">Şifre</label>
+            <input type="password" name="password1" class="form-control" required>
+            {% for error in form.password1.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <div>
+            <label class="form-label">Şifre Tekrar</label>
+            <input type="password" name="password2" class="form-control" required>
+            {% for error in form.password2.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+        </div>
+        <button class="btn btn-success w-100 btn-icon justify-content-center"><i class="bi bi-person-check"></i>Kayıt Ol</button>
+    </form>
+
+    <p class="text-center mt-3 mb-0">
+        Zaten hesabın var mı? <a href="/giris/">Giriş Yap</a>
+    </p>
+</div>
+{% endblock %}

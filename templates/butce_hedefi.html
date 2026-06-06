@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Bütçe Hedefleri | FinansTakip{% endblock %}
+{% block page_title %}Bütçe Hedefleri{% endblock %}
+{% block page_subtitle %}Aylık bütçe hedefini seçili finans türü için belirle.{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-xl-5">
+        <div class="card p-4">
+            <h2 class="section-title">Hedef Belirle</h2>
+            {% if hata %}
+                <div class="alert alert-danger">{{ hata }}</div>
+            {% endif %}
+            <form method="POST" class="d-grid gap-3">
+                {% csrf_token %}
+                <div>
+                    <label class="form-label">Finans Türü</label>
+                    <select name="finans_turu" class="form-select">
+                        {% for deger, etiket in finans_turleri %}
+                            <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Bütçe Hedefi</label>
+                    <input type="number" step="0.01" min="0.01" name="hedef_tutar" class="form-control" value="{% if hedef %}{{ hedef.hedef_tutar }}{% endif %}" required>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary btn-icon"><i class="bi bi-check2-circle"></i>Kaydet</button>
+                    <a href="/?finans_turu={{ secilen_finans_turu }}" class="btn btn-secondary btn-icon"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-xl-7">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                    <h2 class="section-title mb-1">Bütçe Özeti</h2>
+                    <div class="text-muted small">{{ butce_ay }}/{{ butce_yil }} dönemi</div>
+                </div>
+                <span class="badge text-bg-primary rounded-pill px-3 py-2">{{ secilen_finans_turu }}</span>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="border rounded-3 p-3 bg-light h-100">
+                        <div class="text-muted small fw-semibold">Bu Ayki Gider</div>
+                        <div class="fs-5 fw-bold">{{ bu_ay_gider }} TL</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border rounded-3 p-3 bg-light h-100">
+                        <div class="text-muted small fw-semibold">Kalan Bütçe</div>
+                        <div class="fs-5 fw-bold">{% if kalan_butce is not None %}{{ kalan_butce }} TL{% else %}-{% endif %}</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border rounded-3 p-3 bg-light h-100">
+                        <div class="text-muted small fw-semibold">Kullanım</div>
+                        <div class="fs-5 fw-bold">%{{ butce_kullanim_orani }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="progress mt-4">
+                <div class="progress-bar {% if butce_uyari == 'danger' %}bg-danger{% elif butce_uyari == 'warning' %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ butce_kullanim_orani }}%">%{{ butce_kullanim_orani }}</div>
+            </div>
+            {% if butce_uyari == "warning" %}
+                <div class="alert alert-warning mt-4 mb-0">Bu ayki harcaman bütçe hedefinin %80'ini aştı.</div>
+            {% elif butce_uyari == "danger" %}
+                <div class="alert alert-danger mt-4 mb-0">Bu ayki harcaman bütçe hedefini aştı.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

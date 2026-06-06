@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Tekrarlayan Ödemeler | FinansTakip{% endblock %}
+{% block page_title %}Tekrarlayan Ödemeler{% endblock %}
+{% block page_subtitle %}Finans türüne bağlı düzenli ödemeleri ve ödeme dönemlerini takip et.{% endblock %}
+
+{% block content %}
+{% if hata %}
+    <div class="alert alert-danger">{{ hata }}</div>
+{% endif %}
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-4">
+        <div class="card p-4">
+            <h2 class="section-title">Ödeme Ekle</h2>
+            <form method="GET" class="mb-3">
+                <label class="form-label">Finans Türü</label>
+                <select name="finans_turu" class="form-select" onchange="this.form.submit()">
+                    {% for deger, etiket in finans_turleri %}
+                        <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <form method="POST" class="d-grid gap-3">
+                {% csrf_token %}
+                <input type="hidden" name="finans_turu" value="{{ secilen_finans_turu }}">
+                <div>
+                    <label class="form-label">Ödeme Adı</label>
+                    <input type="text" name="odeme_adi" class="form-control" required>
+                </div>
+                <div>
+                    <label class="form-label">Kategori</label>
+                    <select name="kategori" class="form-select" required>
+                        {% for kategori in kategoriler %}
+                            <option value="{{ kategori.id }}">{{ kategori.ad }}</option>
+                        {% empty %}
+                            <option value="">Önce gider kategorisi ekleyin</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Tutar</label>
+                    <input type="number" step="0.01" name="tutar" class="form-control" required>
+                </div>
+                <div>
+                    <label class="form-label">Başlangıç Tarihi</label>
+                    <input type="date" name="baslangic_tarihi" class="form-control" required>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label">Tekrar Türü</label>
+                        <select name="tekrar_turu" class="form-select" required>
+                            {% for deger, etiket in tekrar_turleri %}
+                                <option value="{{ deger }}" {% if deger == "aylik" %}selected{% endif %}>{{ etiket }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Aralık</label>
+                        <input type="number" name="tekrar_araligi" min="1" step="1" value="1" class="form-control" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">Açıklama</label>
+                    <input type="text" name="aciklama" class="form-control">
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="aktif" class="form-check-input" id="aktif" checked>
+                    <label class="form-check-label" for="aktif">Aktif</label>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-primary btn-icon"><i class="bi bi-plus-circle"></i>Ekle</button>
+                    <a href="/kategoriler/?finans_turu={{ secilen_finans_turu }}" class="btn btn-outline-primary btn-icon"><i class="bi bi-tags"></i>Kategoriler</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-xl-8">
+        <div class="card p-4 h-100">
+            <h2 class="section-title">Tanımlı Ödemeler</h2>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Ödeme</th>
+                            <th>Kategori</th>
+                            <th>Sonraki Vade</th>
+                            <th class="text-end">Tutar</th>
+                            <th>Durum</th>
+                            <th class="text-end">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for kayit in odeme_kayitlari %}
+                            <tr>
+                                <td class="fw-semibold">{{ kayit.odeme.odeme_adi }}</td>
+                                <td>{{ kayit.odeme.kategori.ad }}</td>
+                                <td>{{ kayit.vade_tarihi }}</td>
+                                <td class="text-end fw-bold">{{ kayit.odeme.tutar }} TL</td>
+                                <td><span class="badge bg-{{ kayit.durum.renk }}">{{ kayit.durum.etiket }}</span></td>
+                                <td class="text-end">
+                                    <a href="/tekrarlayan-odeme-duzenle/{{ kayit.odeme.id }}/" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="bi bi-pencil-square"></i></a>
+                                    <a href="/tekrarlayan-odeme-sil/{{ kayit.odeme.id }}/" class="btn btn-sm btn-outline-danger" title="Sil"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="empty-state">Henüz tekrarlayan ödeme yok.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h2 class="section-title mb-1">Ödeme Dönemleri</h2>
+            <div class="text-muted small">Her dönem ayrı saklanır ve ödendi işlemi dönem bazlı yapılır.</div>
+        </div>
+        <span class="badge text-bg-light border rounded-pill px-3 py-2">{{ secilen_finans_turu }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Ödeme</th>
+                    <th>Kategori</th>
+                    <th>Dönem</th>
+                    <th>Vade</th>
+                    <th class="text-end">Tutar</th>
+                    <th>Durum</th>
+                    <th class="text-end">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for kayit in donem_kayitlari %}
+                    <tr>
+                        <td class="fw-semibold">{{ kayit.odeme.odeme_adi }}</td>
+                        <td>{{ kayit.odeme.kategori.ad }}</td>
+                        <td>{{ kayit.donem.donem_ay }}/{{ kayit.donem.donem_yil }}</td>
+                        <td>{{ kayit.donem.vade_tarihi }}</td>
+                        <td class="text-end fw-bold">{{ kayit.odeme.tutar }} TL</td>
+                        <td><span class="badge bg-{{ kayit.durum.renk }}">{{ kayit.durum.etiket }}</span></td>
+                        <td class="text-end">
+                            {% if kayit.durum.deger != "odendi" and kayit.odeme.aktif %}
+                                <a href="/odeme-donemi-odendi/{{ kayit.donem.id }}/" class="btn btn-sm btn-success" title="Ödendi"><i class="bi bi-check2"></i></a>
+                            {% endif %}
+                            <a href="/tekrarlayan-odeme-duzenle/{{ kayit.odeme.id }}/" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="bi bi-pencil-square"></i></a>
+                            <a href="/tekrarlayan-odeme-sil/{{ kayit.odeme.id }}/" class="btn btn-sm btn-outline-danger" title="Sil"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7" class="empty-state">Henüz ödeme dönemi yok.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
