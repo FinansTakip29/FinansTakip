@@ -19,8 +19,12 @@ services:
           name: finans-takip-db
           property: connectionString
       - key: ALLOWED_HOSTS
-        sync: false
+        value: finanstakip-61ls.onrender.com
       - key: CSRF_TRUSTED_ORIGINS
+        value: https://finanstakip-61ls.onrender.com
+      - key: SENTRY_DSN
         sync: false
+      - key: SENTRY_ENVIRONMENT
+        value: production
       - key: SECURE_SSL_REDIRECT
         value: "True"
