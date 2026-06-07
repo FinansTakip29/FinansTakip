@@ -78,6 +78,9 @@
                     <p class="page-subtitle">{% block page_subtitle %}Finansal durumunu tek ekrandan takip et.{% endblock %}</p>
                 </div>
                 <div class="topbar-actions">
+                    <button class="theme-toggle app-chip" type="button" data-theme-toggle aria-label="Temayı değiştir">
+                        <i class="bi bi-moon-stars"></i><span>Tema</span>
+                    </button>
                     {% if secilen_finans_turu %}
                         <span class="app-chip app-chip-primary">{{ secilen_finans_turu }}</span>
                     {% endif %}
@@ -99,6 +102,7 @@
 {% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'js/app.js' %}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -28,6 +28,11 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Tarayıcı konsolundaki `favicon.ico` 404 hatasını gidermek için cache'lenebilir favicon endpoint'i eklendi.
 - Sentry SDK entegrasyonu ve Render ortamında `SENTRY_DSN` ile hata izleme desteği eklendi.
 - Creative Production yaklaşımıyla mobil hamburger menü, modern sidebar, ortak CSS tasarım sistemi, profesyonel auth ekranları, kart, form, tablo ve grafik görünümü iyileştirildi.
+- Dashboard modern banka uygulaması görünümüne taşındı; finansal sağlık, tasarruf oranı, aylık nakit akışı ve geçen aya göre değişim özeti eklendi.
+- Dashboard'a Chart.js ile son 12 aylık gelir/gider trend grafiği ve kategori bazlı gider dağılımı grafiği eklendi.
+- Tüm sayfalarda çalışan localStorage destekli light/dark tema değiştirme özelliği eklendi.
+- Dashboard bildirim merkezi ile yaklaşan ödemeler, geciken ödemeler ve kritik bütçe uyarıları tek alanda gösterildi.
+- Responsive kart, grafik, bildirim ve hızlı işlem düzenleri mobil ve masaüstü için iyileştirildi.
 
 ### Düzeltildi
 - Raporlar sayfasında grafik scriptlerinin `scripts` bloğu dışında kalması nedeniyle oluşan `TemplateSyntaxError` hatası düzeltildi.

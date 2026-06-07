@@ -5,97 +5,151 @@
 {% block page_subtitle %}Gelir, gider, bütçe ve ödeme durumunu seçili finans türüne göre izle.{% endblock %}
 
 {% block content %}
-<form method="GET" class="card p-3 mb-4">
-    <div class="row g-3 align-items-end">
-        <div class="col-lg-9">
-            <label for="finans_turu" class="form-label">Finans Türü</label>
+<section class="dashboard-hero mb-4">
+    <div>
+        <span class="hero-kicker">Finans Özeti</span>
+        <h2 class="hero-title">{{ secilen_finans_turu|title }} finans görünümü</h2>
+        <p class="hero-copy">Bu ayki nakit akışı, bütçe sağlığı ve ödeme risklerini tek ekrandan takip et.</p>
+    </div>
+    <form method="GET" class="hero-filter">
+        <label for="finans_turu" class="form-label">Finans Türü</label>
+        <div class="d-flex gap-2 flex-wrap">
             <select id="finans_turu" name="finans_turu" class="form-select">
                 {% for deger, etiket in finans_turleri %}
                     <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
                 {% endfor %}
             </select>
+            <button class="btn btn-light btn-icon"><i class="bi bi-funnel"></i>Filtrele</button>
         </div>
-        <div class="col-lg-3">
-            <button class="btn btn-primary w-100 btn-icon"><i class="bi bi-funnel"></i>Filtrele</button>
-        </div>
-    </div>
-</form>
+    </form>
+</section>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-6 col-xl-3">
-        <div class="card metric-card p-4">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="text-muted fw-semibold small">Toplam Gelir</div>
-                    <div class="fs-3 fw-bold mt-2">{{ toplam_gelir }} TL</div>
-                </div>
-                <span class="metric-icon bg-success-subtle text-success"><i class="bi bi-arrow-down-circle"></i></span>
-            </div>
+<section class="dashboard-grid mb-4">
+    <div class="card metric-card metric-card-income p-4">
+        <div class="metric-card-header">
+            <span class="metric-icon bg-success-subtle text-success"><i class="bi bi-arrow-down-circle"></i></span>
+            <span class="metric-trend text-success"><i class="bi bi-graph-up-arrow"></i>Gelir</span>
         </div>
+        <div class="text-muted fw-semibold small">Toplam Gelir</div>
+        <div class="metric-value">{{ toplam_gelir }} TL</div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="card metric-card p-4">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="text-muted fw-semibold small">Toplam Gider</div>
-                    <div class="fs-3 fw-bold mt-2">{{ toplam_gider }} TL</div>
-                </div>
-                <span class="metric-icon bg-danger-subtle text-danger"><i class="bi bi-arrow-up-circle"></i></span>
-            </div>
+    <div class="card metric-card metric-card-expense p-4">
+        <div class="metric-card-header">
+            <span class="metric-icon bg-danger-subtle text-danger"><i class="bi bi-arrow-up-circle"></i></span>
+            <span class="metric-trend text-danger"><i class="bi bi-activity"></i>Gider</span>
         </div>
+        <div class="text-muted fw-semibold small">Toplam Gider</div>
+        <div class="metric-value">{{ toplam_gider }} TL</div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="card metric-card p-4">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="text-muted fw-semibold small">Bakiye</div>
-                    <div class="fs-3 fw-bold mt-2">{{ bakiye }} TL</div>
-                </div>
-                <span class="metric-icon bg-primary-subtle text-primary"><i class="bi bi-bank"></i></span>
-            </div>
+    <div class="card metric-card metric-card-balance p-4">
+        <div class="metric-card-header">
+            <span class="metric-icon bg-primary-subtle text-primary"><i class="bi bi-bank"></i></span>
+            <span class="metric-trend {% if bakiye >= 0 %}text-success{% else %}text-danger{% endif %}">
+                <i class="bi bi-wallet2"></i>Bakiye
+            </span>
         </div>
+        <div class="text-muted fw-semibold small">Net Bakiye</div>
+        <div class="metric-value">{{ bakiye }} TL</div>
     </div>
-    <div class="col-md-6 col-xl-3">
-        <div class="card metric-card p-4">
-            <div class="d-flex justify-content-between align-items-start">
+    <div class="card metric-card metric-card-budget p-4">
+        <div class="metric-card-header">
+            <span class="metric-icon bg-info-subtle text-info"><i class="bi bi-bullseye"></i></span>
+            <span class="metric-trend text-primary"><i class="bi bi-speedometer2"></i>%{{ butce_kullanim_orani }}</span>
+        </div>
+        <div class="text-muted fw-semibold small">Kalan Bütçe</div>
+        <div class="metric-value">{% if kalan_butce is not None %}{{ kalan_butce }} TL{% else %}-{% endif %}</div>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="card p-4 h-100">
+            <div class="card-toolbar mb-3">
                 <div>
-                    <div class="text-muted fw-semibold small">Bütçe Durumu</div>
-                    <div class="fs-3 fw-bold mt-2">
-                        {% if kalan_butce is not None %}{{ kalan_butce }} TL{% else %}-{% endif %}
+                    <h2 class="section-title mb-1">Finansal Sağlık</h2>
+                    <div class="text-muted small">Bu ayki gelir, gider ve bütçe kullanımına göre hesaplandı.</div>
+                </div>
+                <span class="health-score">{{ finansal_saglik_puani }}/100</span>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-3 col-6">
+                    <div class="summary-tile">
+                        <span>Tasarruf Oranı</span>
+                        <strong>%{{ tasarruf_orani }}</strong>
                     </div>
                 </div>
-                <span class="metric-icon bg-info-subtle text-info"><i class="bi bi-bullseye"></i></span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card metric-card p-4">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="text-muted fw-semibold small">Yaklaşan Ödemeler</div>
-                    <div class="fs-3 fw-bold mt-2">{{ yaklasan_odemeler|length }}</div>
+                <div class="col-md-3 col-6">
+                    <div class="summary-tile">
+                        <span>Aylık Nakit Akışı</span>
+                        <strong>{{ aylik_nakit_akisi }} TL</strong>
+                    </div>
                 </div>
-                <span class="metric-icon bg-warning-subtle text-warning"><i class="bi bi-calendar-event"></i></span>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card metric-card p-4">
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="text-muted fw-semibold small">Geciken Ödemeler</div>
-                    <div class="fs-3 fw-bold mt-2">{{ geciken_odemeler|length }}</div>
+                <div class="col-md-3 col-6">
+                    <div class="summary-tile">
+                        <span>Geçen Aya Göre</span>
+                        <strong class="{% if gecen_aya_gore_degisim >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            %{{ gecen_aya_gore_degisim }}
+                        </strong>
+                    </div>
                 </div>
-                <span class="metric-icon bg-danger-subtle text-danger"><i class="bi bi-exclamation-triangle"></i></span>
+                <div class="col-md-3 col-6">
+                    <div class="summary-tile">
+                        <span>Bu Ay Gider</span>
+                        <strong>{{ bu_ay_gider }} TL</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="health-track mt-4">
+                <div class="health-track-fill {% if finansal_saglik_puani >= 70 %}bg-success{% elif finansal_saglik_puani >= 45 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ finansal_saglik_puani }}%"></div>
             </div>
         </div>
     </div>
-</div>
-
-<div class="row g-4 mb-4">
-    <div class="col-xl-7">
+    <div class="col-xl-4">
         <div class="card p-4 h-100">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="card-toolbar mb-3">
+                <h2 class="section-title mb-0">Hızlı İşlemler</h2>
+                <a href="/raporlar/?finans_turu={{ secilen_finans_turu }}" class="btn btn-primary btn-sm btn-icon">
+                    <i class="bi bi-bar-chart"></i>Raporlar
+                </a>
+            </div>
+            <div class="quick-actions">
+                <a href="/gelir-ekle/?finans_turu={{ secilen_finans_turu }}" class="quick-action quick-action-success"><i class="bi bi-plus-circle"></i><span>Gelir Ekle</span></a>
+                <a href="/gider-ekle/?finans_turu={{ secilen_finans_turu }}" class="quick-action quick-action-danger"><i class="bi bi-dash-circle"></i><span>Gider Ekle</span></a>
+                <a href="/kategoriler/?finans_turu={{ secilen_finans_turu }}" class="quick-action"><i class="bi bi-tags"></i><span>Kategoriler</span></a>
+                <a href="/tekrarlayan-odemeler/?finans_turu={{ secilen_finans_turu }}" class="quick-action"><i class="bi bi-repeat"></i><span>Ödemeler</span></a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <div class="card p-4 h-100">
+            <div class="card-toolbar mb-3">
+                <div>
+                    <h2 class="section-title mb-1">Son 12 Aylık Trend</h2>
+                    <div class="text-muted small">Gelir ve gider akışını aylık karşılaştır.</div>
+                </div>
+            </div>
+            <div class="chart-box chart-box-wide">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-4">
+        <div class="card p-4 h-100">
+            <h2 class="section-title">Kategori Dağılımı</h2>
+            <div class="chart-box chart-box-compact">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-xl-5">
+        <div class="card p-4 h-100">
+            <div class="card-toolbar mb-3">
                 <div>
                     <h2 class="section-title mb-1">Aylık Bütçe Hedefi</h2>
                     <div class="text-muted small">{{ butce_ay }}/{{ butce_yil }} dönemi</div>
@@ -105,32 +159,30 @@
                 </a>
             </div>
             <div class="row g-3">
-                <div class="col-md-4">
-                    <div class="border rounded-3 p-3 bg-light">
-                        <div class="text-muted small fw-semibold">Hedef</div>
-                        <div class="fw-bold fs-5">{% if aylik_butce_hedefi %}{{ aylik_butce_hedefi }} TL{% else %}Belirlenmedi{% endif %}</div>
+                <div class="col-sm-4">
+                    <div class="summary-tile">
+                        <span>Hedef</span>
+                        <strong>{% if aylik_butce_hedefi %}{{ aylik_butce_hedefi }} TL{% else %}Belirlenmedi{% endif %}</strong>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="border rounded-3 p-3 bg-light">
-                        <div class="text-muted small fw-semibold">Bu Ayki Gider</div>
-                        <div class="fw-bold fs-5">{{ bu_ay_gider }} TL</div>
+                <div class="col-sm-4">
+                    <div class="summary-tile">
+                        <span>Gider</span>
+                        <strong>{{ bu_ay_gider }} TL</strong>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="border rounded-3 p-3 bg-light">
-                        <div class="text-muted small fw-semibold">Kalan Bütçe</div>
-                        <div class="fw-bold fs-5">{% if kalan_butce is not None %}{{ kalan_butce }} TL{% else %}-{% endif %}</div>
+                <div class="col-sm-4">
+                    <div class="summary-tile">
+                        <span>Kalan</span>
+                        <strong>{% if kalan_butce is not None %}{{ kalan_butce }} TL{% else %}-{% endif %}</strong>
                     </div>
                 </div>
             </div>
-
             <div class="progress mt-4" role="progressbar" aria-label="Bütçe kullanım oranı">
                 <div class="progress-bar {% if butce_uyari == 'danger' %}bg-danger{% elif butce_uyari == 'warning' %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ butce_kullanim_orani }}%">
                     %{{ butce_kullanim_orani }}
                 </div>
             </div>
-
             {% if butce_uyari == "warning" %}
                 <div class="alert alert-warning mt-4 mb-0">Bu ayki harcaman bütçe hedefinin %80'ini aştı.</div>
             {% elif butce_uyari == "danger" %}
@@ -140,79 +192,58 @@
             {% endif %}
         </div>
     </div>
-
-    <div class="col-xl-5">
+    <div class="col-xl-7">
         <div class="card p-4 h-100">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                <h2 class="section-title mb-0">Hızlı İşlemler</h2>
-                <a href="/raporlar/?finans_turu={{ secilen_finans_turu }}" class="btn btn-primary btn-sm btn-icon">
-                    <i class="bi bi-bar-chart"></i>Raporlar
+            <div class="card-toolbar mb-3">
+                <div>
+                    <h2 class="section-title mb-1">Bildirim Merkezi</h2>
+                    <div class="text-muted small">Yaklaşan ödemeler, geciken ödemeler ve bütçe uyarıları</div>
+                </div>
+                <a href="/tekrarlayan-odemeler/?finans_turu={{ secilen_finans_turu }}" class="btn btn-outline-primary btn-sm btn-icon">
+                    <i class="bi bi-list-check"></i>Yönet
                 </a>
             </div>
-            <div class="d-grid gap-2">
-                <a href="/gelir-ekle/?finans_turu={{ secilen_finans_turu }}" class="btn btn-success btn-icon justify-content-center"><i class="bi bi-plus-circle"></i>Gelir Ekle</a>
-                <a href="/gider-ekle/?finans_turu={{ secilen_finans_turu }}" class="btn btn-danger btn-icon justify-content-center"><i class="bi bi-dash-circle"></i>Gider Ekle</a>
-                <a href="/kategoriler/?finans_turu={{ secilen_finans_turu }}" class="btn btn-outline-secondary btn-icon justify-content-center"><i class="bi bi-tags"></i>Kategoriler</a>
-                <a href="/tekrarlayan-odemeler/?finans_turu={{ secilen_finans_turu }}" class="btn btn-outline-secondary btn-icon justify-content-center"><i class="bi bi-repeat"></i>Tekrarlayan Ödemeler</a>
-            </div>
-        </div>
-    </div>
-</div>
+            <div class="notification-stack">
+                {% if butce_uyari == "danger" %}
+                    <div class="notification-item notification-danger">
+                        <i class="bi bi-exclamation-octagon"></i>
+                        <div><strong>Bütçe aşıldı</strong><span>Bu ayki giderler hedef bütçenin üzerine çıktı.</span></div>
+                    </div>
+                {% elif butce_uyari == "warning" %}
+                    <div class="notification-item notification-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <div><strong>Bütçe sınırına yaklaşıldı</strong><span>Harcama oranı %80 seviyesini geçti.</span></div>
+                    </div>
+                {% endif %}
 
-<div class="card p-4 mb-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <div>
-            <h2 class="section-title mb-1">Tekrarlayan Ödeme Durumu</h2>
-            <div class="text-muted small">Bu ayki dönem kayıtları</div>
-        </div>
-        <a href="/tekrarlayan-odemeler/?finans_turu={{ secilen_finans_turu }}" class="btn btn-outline-primary btn-sm btn-icon">
-            <i class="bi bi-list-check"></i>Yönet
-        </a>
-    </div>
-    <div class="row g-3">
-        <div class="col-lg-4">
-            <h3 class="h6 fw-bold">Bu Ay Ödenecek</h3>
-            <div class="list-group">
-                {% for kayit in bu_ay_tekrarlayan_odemeler %}
-                    <div class="list-group-item list-group-item-{{ kayit.durum.renk }} d-flex justify-content-between gap-2">
-                        <span>{{ kayit.odeme.odeme_adi }}</span>
-                        <strong>{{ kayit.odeme.tutar }} TL</strong>
-                    </div>
-                {% empty %}
-                    <div class="list-group-item text-muted">Kayıt yok.</div>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <h3 class="h6 fw-bold">Yaklaşan Ödemeler</h3>
-            <div class="list-group">
-                {% for kayit in yaklasan_odemeler %}
-                    <div class="list-group-item list-group-item-warning d-flex justify-content-between gap-2">
-                        <span>{{ kayit.odeme.odeme_adi }}</span>
-                        <strong>{{ kayit.vade_tarihi }}</strong>
-                    </div>
-                {% empty %}
-                    <div class="list-group-item text-muted">Kayıt yok.</div>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <h3 class="h6 fw-bold">Geciken Ödemeler</h3>
-            <div class="list-group">
                 {% for kayit in geciken_odemeler %}
-                    <div class="list-group-item list-group-item-danger d-flex justify-content-between gap-2">
-                        <span>{{ kayit.odeme.odeme_adi }}</span>
-                        <strong>{{ kayit.vade_tarihi }}</strong>
+                    <div class="notification-item notification-danger">
+                        <i class="bi bi-clock-history"></i>
+                        <div><strong>{{ kayit.odeme.odeme_adi }}</strong><span>Vade geçti: {{ kayit.vade_tarihi }}</span></div>
+                        <b>{{ kayit.odeme.tutar }} TL</b>
                     </div>
-                {% empty %}
-                    <div class="list-group-item text-muted">Kayıt yok.</div>
                 {% endfor %}
+
+                {% for kayit in yaklasan_odemeler %}
+                    <div class="notification-item notification-warning">
+                        <i class="bi bi-calendar-event"></i>
+                        <div><strong>{{ kayit.odeme.odeme_adi }}</strong><span>Yaklaşan vade: {{ kayit.vade_tarihi }}</span></div>
+                        <b>{{ kayit.odeme.tutar }} TL</b>
+                    </div>
+                {% endfor %}
+
+                {% if not yaklasan_odemeler and not geciken_odemeler and not butce_uyari %}
+                    <div class="notification-item notification-success">
+                        <i class="bi bi-check2-circle"></i>
+                        <div><strong>Her şey yolunda</strong><span>Kritik bütçe veya ödeme uyarısı bulunmuyor.</span></div>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
-</div>
+</section>
 
-<div class="row g-4">
+<section class="row g-4">
     <div class="col-xl-6">
         <div class="card p-4">
             <h2 class="section-title">Son Gelirler</h2>
@@ -267,5 +298,23 @@
             </div>
         </div>
     </div>
-</div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ trend_aylari|json_script:"trend-labels" }}
+{{ trend_gelirleri|json_script:"trend-income" }}
+{{ trend_giderleri|json_script:"trend-expense" }}
+{{ kategori_grafik_adlari|json_script:"category-labels" }}
+{{ kategori_grafik_tutarlari|json_script:"category-values" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+window.FinansTakipCharts = {
+    trendLabels: JSON.parse(document.getElementById('trend-labels').textContent),
+    trendIncome: JSON.parse(document.getElementById('trend-income').textContent),
+    trendExpense: JSON.parse(document.getElementById('trend-expense').textContent),
+    categoryLabels: JSON.parse(document.getElementById('category-labels').textContent),
+    categoryValues: JSON.parse(document.getElementById('category-values').textContent)
+};
+</script>
 {% endblock %}

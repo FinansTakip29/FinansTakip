@@ -384,6 +384,94 @@ def _rapor_verileri(kullanici, finans_turu, ay=None):
     }
 
 
+def _dashboard_grafik_verileri(kullanici, finans_turu, butce_verileri, odeme_verileri):
+    bugun = timezone.now().date()
+    ay_baslangici = bugun.replace(day=1)
+    onceki_ay_baslangici = _ay_ekle(ay_baslangici, -1)
+
+    aylar = []
+    for indeks in range(11, -1, -1):
+        ay_tarihi = _ay_ekle(ay_baslangici, -indeks)
+        aylar.append((ay_tarihi.year, ay_tarihi.month, f"{ay_tarihi.month:02d}/{ay_tarihi.year}"))
+
+    trend_gelirleri = []
+    trend_giderleri = []
+
+    for yil, ay, _ in aylar:
+        aylik_gelir = Gelir.objects.filter(
+            kullanici=kullanici,
+            finans_turu=finans_turu,
+            tarih__year=yil,
+            tarih__month=ay,
+        ).aggregate(Sum("tutar"))["tutar__sum"] or 0
+        aylik_gider = Gider.objects.filter(
+            kullanici=kullanici,
+            finans_turu=finans_turu,
+            tarih__year=yil,
+            tarih__month=ay,
+        ).aggregate(Sum("tutar"))["tutar__sum"] or 0
+        trend_gelirleri.append(float(aylik_gelir))
+        trend_giderleri.append(float(aylik_gider))
+
+    bu_ay_gelir = Gelir.objects.filter(
+        kullanici=kullanici,
+        finans_turu=finans_turu,
+        tarih__year=bugun.year,
+        tarih__month=bugun.month,
+    ).aggregate(Sum("tutar"))["tutar__sum"] or 0
+    bu_ay_gider = butce_verileri["bu_ay_gider"]
+    onceki_ay_gelir = Gelir.objects.filter(
+        kullanici=kullanici,
+        finans_turu=finans_turu,
+        tarih__year=onceki_ay_baslangici.year,
+        tarih__month=onceki_ay_baslangici.month,
+    ).aggregate(Sum("tutar"))["tutar__sum"] or 0
+    onceki_ay_gider = Gider.objects.filter(
+        kullanici=kullanici,
+        finans_turu=finans_turu,
+        tarih__year=onceki_ay_baslangici.year,
+        tarih__month=onceki_ay_baslangici.month,
+    ).aggregate(Sum("tutar"))["tutar__sum"] or 0
+
+    aylik_nakit_akisi = bu_ay_gelir - bu_ay_gider
+    onceki_ay_nakit_akisi = onceki_ay_gelir - onceki_ay_gider
+    if onceki_ay_nakit_akisi:
+        gecen_aya_gore_degisim = ((aylik_nakit_akisi - onceki_ay_nakit_akisi) / abs(onceki_ay_nakit_akisi)) * 100
+    else:
+        gecen_aya_gore_degisim = 100 if aylik_nakit_akisi > 0 else 0
+
+    tasarruf_orani = (aylik_nakit_akisi / bu_ay_gelir) * 100 if bu_ay_gelir else 0
+    butce_kullanim_orani = Decimal(str(butce_verileri["butce_kullanim_orani"]))
+    geciken_odeme_sayisi = len(odeme_verileri["geciken_odemeler"])
+    saglik_puani = 50
+    saglik_puani += min(max(float(tasarruf_orani), -30), 30)
+    if butce_verileri["aylik_butce_hedefi"]:
+        saglik_puani += max(0, 20 - (float(butce_kullanim_orani) / 5))
+    saglik_puani -= min(geciken_odeme_sayisi * 10, 30)
+    saglik_puani = max(0, min(100, round(saglik_puani)))
+
+    kategori_giderleri = Gider.objects.filter(
+        kullanici=kullanici,
+        finans_turu=finans_turu,
+        tarih__year=bugun.year,
+        tarih__month=bugun.month,
+    ).values("kategori").annotate(toplam=Sum("tutar")).order_by("-toplam")
+
+    return {
+        "dashboard_aylik_gelir": bu_ay_gelir,
+        "dashboard_aylik_gider": bu_ay_gider,
+        "tasarruf_orani": round(float(tasarruf_orani), 2),
+        "finansal_saglik_puani": saglik_puani,
+        "gecen_aya_gore_degisim": round(float(gecen_aya_gore_degisim), 2),
+        "aylik_nakit_akisi": aylik_nakit_akisi,
+        "trend_aylari": [etiket for _, _, etiket in aylar],
+        "trend_gelirleri": trend_gelirleri,
+        "trend_giderleri": trend_giderleri,
+        "kategori_grafik_adlari": [item["kategori"] for item in kategori_giderleri],
+        "kategori_grafik_tutarlari": [float(item["toplam"]) for item in kategori_giderleri],
+    }
+
+
 def _pdf_font_adi():
     font_adi = "TurkceFont"
     if font_adi in pdfmetrics.getRegisteredFontNames():
@@ -467,8 +555,11 @@ def home(request):
         "son_gelirler": son_gelirler,
         "son_giderler": son_giderler,
     }
-    context.update(_aylik_butce_verileri(request.user, finans_turu))
-    context.update(_tekrarlayan_odeme_verileri(request.user, finans_turu))
+    butce_verileri = _aylik_butce_verileri(request.user, finans_turu)
+    odeme_verileri = _tekrarlayan_odeme_verileri(request.user, finans_turu)
+    context.update(butce_verileri)
+    context.update(odeme_verileri)
+    context.update(_dashboard_grafik_verileri(request.user, finans_turu, butce_verileri, odeme_verileri))
 
     return render(request, "home.html", context)
 
