@@ -30,6 +30,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Creative Production yaklaşımıyla mobil hamburger menü, modern sidebar, ortak CSS tasarım sistemi, profesyonel auth ekranları, kart, form, tablo ve grafik görünümü iyileştirildi.
 
 ### Düzeltildi
+- Raporlar sayfasında grafik scriptlerinin `scripts` bloğu dışında kalması nedeniyle oluşan `TemplateSyntaxError` hatası düzeltildi.
 - Tekrarlayan ödeme tablosunda eksik kalan `tekrar_turu` ve `tekrar_araligi` kolonlarını veri silmeden ekleyen migration düzeltmesi eklendi.
 
 ## [İlk Sürüm] - 2026-06-05
