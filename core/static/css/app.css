@@ -658,6 +658,39 @@ label {
     color: var(--app-danger);
 }
 
+.backup-action-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.backup-action {
+    background: var(--app-surface-soft);
+    border: 1px solid var(--app-border);
+    border-radius: 8px;
+    color: var(--app-text);
+    display: grid;
+    gap: .45rem;
+    padding: 1rem;
+    text-decoration: none;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.backup-action:hover {
+    border-color: var(--app-primary);
+    box-shadow: var(--app-shadow-soft);
+    color: var(--app-text);
+    transform: translateY(-2px);
+}
+
+.backup-action i {
+    font-size: 1.6rem;
+}
+
+.backup-action span {
+    color: var(--app-muted);
+    font-size: .9rem;
+}
+
 .notification-stack {
     display: grid;
     gap: .75rem;

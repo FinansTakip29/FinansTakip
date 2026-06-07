@@ -47,6 +47,7 @@
                 <a class="nav-link" href="/tekrarlayan-odemeler/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-repeat"></i>Tekrarlayan Ödemeler</a>
                 <a class="nav-link" href="/raporlar/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-bar-chart"></i>Raporlar</a>
                 <a class="nav-link" href="/raporlar/pdf/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-file-earmark-pdf"></i>PDF Rapor</a>
+                <a class="nav-link" href="/yedekleme/"><i class="bi bi-cloud-arrow-down"></i>Yedekleme</a>
                 <a class="nav-link mt-auto" href="/cikis/"><i class="bi bi-box-arrow-right"></i>Çıkış</a>
             </nav>
         </aside>
@@ -79,6 +80,7 @@
                     <a class="nav-link" href="/tekrarlayan-odemeler/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-repeat"></i>Tekrarlayan Ödemeler</a>
                     <a class="nav-link" href="/raporlar/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-bar-chart"></i>Raporlar</a>
                     <a class="nav-link" href="/raporlar/pdf/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-file-earmark-pdf"></i>PDF Rapor</a>
+                    <a class="nav-link" href="/yedekleme/"><i class="bi bi-cloud-arrow-down"></i>Yedekleme</a>
                     <a class="nav-link" href="/cikis/"><i class="bi bi-box-arrow-right"></i>Çıkış</a>
                 </nav>
             </div>
@@ -104,6 +106,13 @@
             </header>
 
             <section class="page-content">
+                {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                            <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags|default:'info' }}{% endif %} mb-2">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
                 {% block content %}{% endblock %}
             </section>
         </main>

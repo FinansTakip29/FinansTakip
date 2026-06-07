@@ -7,16 +7,19 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.db import transaction
 from django.db.models import Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.templatetags.static import static
 from django.utils import timezone
+from openpyxl import Workbook
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import A4
@@ -75,7 +78,7 @@ def manifest(request):
 
 
 def service_worker(request):
-    cache_name = "finanstakip-pwa-v2"
+    cache_name = "finanstakip-pwa-v3"
     static_assets = [
         "/offline/",
         "/favicon.ico",
@@ -596,6 +599,382 @@ def _dashboard_grafik_verileri(kullanici, finans_turu, butce_verileri, odeme_ver
         "kategori_grafik_adlari": [item["kategori"] for item in kategori_giderleri],
         "kategori_grafik_tutarlari": [float(item["toplam"]) for item in kategori_giderleri],
     }
+
+
+def _date_to_text(value):
+    return value.isoformat() if value else None
+
+
+def _decimal_to_text(value):
+    return str(value) if value is not None else None
+
+
+def _parse_decimal(value):
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+
+
+def _backup_payload(kullanici):
+    kategoriler = Kategori.objects.filter(kullanici=kullanici).order_by("finans_turu", "tur", "ad")
+    gelirler = Gelir.objects.filter(kullanici=kullanici).order_by("tarih", "id")
+    giderler = Gider.objects.filter(kullanici=kullanici).order_by("tarih", "id")
+    butceler = ButceHedefi.objects.filter(kullanici=kullanici).order_by("yil", "ay", "finans_turu")
+    odemeler = TekrarlayanOdeme.objects.filter(kullanici=kullanici).select_related("kategori", "son_gider").order_by("id")
+    donemler = OdemeDonemi.objects.filter(
+        tekrarlayan_odeme__kullanici=kullanici,
+    ).select_related("tekrarlayan_odeme").order_by("donem_yil", "donem_ay", "id")
+
+    return {
+        "meta": {
+            "app": "FinansTakip",
+            "version": 1,
+            "created_at": timezone.now().isoformat(),
+            "username": kullanici.username,
+        },
+        "kategoriler": [
+            {
+                "id": kategori.id,
+                "finans_turu": kategori.finans_turu,
+                "ad": kategori.ad,
+                "tur": kategori.tur,
+            }
+            for kategori in kategoriler
+        ],
+        "gelirler": [
+            {
+                "id": gelir.id,
+                "finans_turu": gelir.finans_turu,
+                "tarih": _date_to_text(gelir.tarih),
+                "aciklama": gelir.aciklama,
+                "tutar": _decimal_to_text(gelir.tutar),
+                "kategori": gelir.kategori,
+            }
+            for gelir in gelirler
+        ],
+        "giderler": [
+            {
+                "id": gider.id,
+                "finans_turu": gider.finans_turu,
+                "tarih": _date_to_text(gider.tarih),
+                "aciklama": gider.aciklama,
+                "tutar": _decimal_to_text(gider.tutar),
+                "kategori": gider.kategori,
+            }
+            for gider in giderler
+        ],
+        "butce_hedefleri": [
+            {
+                "id": butce.id,
+                "finans_turu": butce.finans_turu,
+                "yil": butce.yil,
+                "ay": butce.ay,
+                "hedef_tutar": _decimal_to_text(butce.hedef_tutar),
+            }
+            for butce in butceler
+        ],
+        "tekrarlayan_odemeler": [
+            {
+                "id": odeme.id,
+                "finans_turu": odeme.finans_turu,
+                "kategori_id": odeme.kategori_id,
+                "kategori_ad": odeme.kategori.ad,
+                "odeme_adi": odeme.odeme_adi,
+                "aciklama": odeme.aciklama,
+                "tutar": _decimal_to_text(odeme.tutar),
+                "baslangic_tarihi": _date_to_text(odeme.baslangic_tarihi),
+                "tekrar_turu": odeme.tekrar_turu,
+                "tekrar_araligi": odeme.tekrar_araligi,
+                "aktif": odeme.aktif,
+                "odeme_durumu": odeme.odeme_durumu,
+                "son_olusturma_tarihi": _date_to_text(odeme.son_olusturma_tarihi),
+                "son_gider_id": odeme.son_gider_id,
+            }
+            for odeme in odemeler
+        ],
+        "odeme_donemleri": [
+            {
+                "id": donem.id,
+                "tekrarlayan_odeme_id": donem.tekrarlayan_odeme_id,
+                "donem_yil": donem.donem_yil,
+                "donem_ay": donem.donem_ay,
+                "vade_tarihi": _date_to_text(donem.vade_tarihi),
+                "durum": donem.durum,
+            }
+            for donem in donemler
+        ],
+    }
+
+
+def _clear_user_backup_data(kullanici):
+    OdemeDonemi.objects.filter(tekrarlayan_odeme__kullanici=kullanici).delete()
+    TekrarlayanOdeme.objects.filter(kullanici=kullanici).delete()
+    ButceHedefi.objects.filter(kullanici=kullanici).delete()
+    Gelir.objects.filter(kullanici=kullanici).delete()
+    Gider.objects.filter(kullanici=kullanici).delete()
+    Kategori.objects.filter(kullanici=kullanici).delete()
+
+
+def _restore_backup_payload(kullanici, payload, replace_existing=False):
+    if not isinstance(payload, dict) or payload.get("meta", {}).get("app") != "FinansTakip":
+        raise ValueError("Bu dosya geÃ§erli bir FinansTakip yedeÄŸi deÄŸil.")
+
+    if replace_existing:
+        _clear_user_backup_data(kullanici)
+
+    kategori_map = {}
+    for item in payload.get("kategoriler", []):
+        ad = str(item.get("ad", "")).strip()
+        tur = item.get("tur")
+        finans_turu = item.get("finans_turu") or FINANS_KISISEL
+        if not ad or tur not in [Kategori.GELIR, Kategori.GIDER]:
+            continue
+        kategori, _ = Kategori.objects.get_or_create(
+            kullanici=kullanici,
+            finans_turu=finans_turu,
+            ad=ad,
+            tur=tur,
+        )
+        if item.get("id") is not None:
+            kategori_map[str(item["id"])] = kategori
+
+    gelir_sayisi = 0
+    for item in payload.get("gelirler", []):
+        tutar = _parse_decimal(item.get("tutar"))
+        if not tutar or not item.get("tarih") or not item.get("aciklama"):
+            continue
+        Gelir.objects.create(
+            kullanici=kullanici,
+            finans_turu=item.get("finans_turu") or FINANS_KISISEL,
+            tarih=item["tarih"],
+            aciklama=str(item["aciklama"])[:200],
+            tutar=tutar,
+            kategori=str(item.get("kategori", ""))[:100],
+        )
+        gelir_sayisi += 1
+
+    gider_map = {}
+    gider_sayisi = 0
+    for item in payload.get("giderler", []):
+        tutar = _parse_decimal(item.get("tutar"))
+        if not tutar or not item.get("tarih") or not item.get("aciklama"):
+            continue
+        gider = Gider.objects.create(
+            kullanici=kullanici,
+            finans_turu=item.get("finans_turu") or FINANS_KISISEL,
+            tarih=item["tarih"],
+            aciklama=str(item["aciklama"])[:200],
+            tutar=tutar,
+            kategori=str(item.get("kategori", ""))[:100],
+        )
+        if item.get("id") is not None:
+            gider_map[str(item["id"])] = gider
+        gider_sayisi += 1
+
+    butce_sayisi = 0
+    for item in payload.get("butce_hedefleri", []):
+        hedef_tutar = _parse_decimal(item.get("hedef_tutar"))
+        if not hedef_tutar or not item.get("yil") or not item.get("ay"):
+            continue
+        ButceHedefi.objects.update_or_create(
+            kullanici=kullanici,
+            finans_turu=item.get("finans_turu") or FINANS_KISISEL,
+            yil=int(item["yil"]),
+            ay=int(item["ay"]),
+            defaults={"hedef_tutar": hedef_tutar},
+        )
+        butce_sayisi += 1
+
+    odeme_map = {}
+    odeme_sayisi = 0
+    for item in payload.get("tekrarlayan_odemeler", []):
+        tutar = _parse_decimal(item.get("tutar"))
+        kategori = kategori_map.get(str(item.get("kategori_id")))
+        if not kategori and item.get("kategori_ad"):
+            kategori = Kategori.objects.filter(
+                kullanici=kullanici,
+                finans_turu=item.get("finans_turu") or FINANS_KISISEL,
+                ad=item.get("kategori_ad"),
+                tur=Kategori.GIDER,
+            ).first()
+        if not tutar or not kategori or not item.get("odeme_adi") or not item.get("baslangic_tarihi"):
+            continue
+        odeme = TekrarlayanOdeme.objects.create(
+            kullanici=kullanici,
+            finans_turu=item.get("finans_turu") or FINANS_KISISEL,
+            kategori=kategori,
+            odeme_adi=str(item["odeme_adi"])[:100],
+            aciklama=str(item.get("aciklama", ""))[:200],
+            tutar=tutar,
+            baslangic_tarihi=item["baslangic_tarihi"],
+            tekrar_turu=item.get("tekrar_turu") or TekrarlayanOdeme.AYLIK,
+            tekrar_araligi=max(int(item.get("tekrar_araligi") or 1), 1),
+            aktif=bool(item.get("aktif", True)),
+            odeme_durumu=item.get("odeme_durumu") or TekrarlayanOdeme.BEKLIYOR,
+            son_olusturma_tarihi=item.get("son_olusturma_tarihi") or None,
+            son_gider=gider_map.get(str(item.get("son_gider_id"))),
+        )
+        if item.get("id") is not None:
+            odeme_map[str(item["id"])] = odeme
+        odeme_sayisi += 1
+
+    donem_sayisi = 0
+    for item in payload.get("odeme_donemleri", []):
+        odeme = odeme_map.get(str(item.get("tekrarlayan_odeme_id")))
+        if not odeme or not item.get("donem_yil") or not item.get("donem_ay") or not item.get("vade_tarihi"):
+            continue
+        OdemeDonemi.objects.update_or_create(
+            tekrarlayan_odeme=odeme,
+            donem_yil=int(item["donem_yil"]),
+            donem_ay=int(item["donem_ay"]),
+            defaults={
+                "vade_tarihi": item["vade_tarihi"],
+                "durum": item.get("durum") or OdemeDonemi.BEKLIYOR,
+            },
+        )
+        donem_sayisi += 1
+
+    return {
+        "gelirler": gelir_sayisi,
+        "giderler": gider_sayisi,
+        "kategoriler": len(kategori_map),
+        "butce_hedefleri": butce_sayisi,
+        "tekrarlayan_odemeler": odeme_sayisi,
+        "odeme_donemleri": donem_sayisi,
+    }
+
+
+def _append_rows(sheet, headers, rows):
+    sheet.append(headers)
+    for row in rows:
+        sheet.append(row)
+
+
+@login_required
+def yedekleme(request):
+    context = {
+        "gelir_sayisi": Gelir.objects.filter(kullanici=request.user).count(),
+        "gider_sayisi": Gider.objects.filter(kullanici=request.user).count(),
+        "kategori_sayisi": Kategori.objects.filter(kullanici=request.user).count(),
+        "butce_sayisi": ButceHedefi.objects.filter(kullanici=request.user).count(),
+        "tekrarlayan_odeme_sayisi": TekrarlayanOdeme.objects.filter(kullanici=request.user).count(),
+        "odeme_donemi_sayisi": OdemeDonemi.objects.filter(tekrarlayan_odeme__kullanici=request.user).count(),
+    }
+    context.update(_finans_turu_context(FINANS_KISISEL))
+    return render(request, "yedekleme.html", context)
+
+
+@login_required
+def yedekleme_json_indir(request):
+    payload = _backup_payload(request.user)
+    response = HttpResponse(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        content_type="application/json; charset=utf-8",
+    )
+    response["Content-Disposition"] = 'attachment; filename="finanstakip-yedek.json"'
+    return response
+
+
+@login_required
+def yedekleme_excel_indir(request):
+    payload = _backup_payload(request.user)
+    workbook = Workbook()
+    workbook.remove(workbook.active)
+
+    sheet = workbook.create_sheet("Gelirler")
+    _append_rows(sheet, ["Tarih", "Finans Turu", "Aciklama", "Kategori", "Tutar"], [
+        [item["tarih"], item["finans_turu"], item["aciklama"], item["kategori"], item["tutar"]]
+        for item in payload["gelirler"]
+    ])
+
+    sheet = workbook.create_sheet("Giderler")
+    _append_rows(sheet, ["Tarih", "Finans Turu", "Aciklama", "Kategori", "Tutar"], [
+        [item["tarih"], item["finans_turu"], item["aciklama"], item["kategori"], item["tutar"]]
+        for item in payload["giderler"]
+    ])
+
+    sheet = workbook.create_sheet("Kategoriler")
+    _append_rows(sheet, ["Finans Turu", "Ad", "Tur"], [
+        [item["finans_turu"], item["ad"], item["tur"]]
+        for item in payload["kategoriler"]
+    ])
+
+    sheet = workbook.create_sheet("Butce Hedefleri")
+    _append_rows(sheet, ["Finans Turu", "Yil", "Ay", "Hedef Tutar"], [
+        [item["finans_turu"], item["yil"], item["ay"], item["hedef_tutar"]]
+        for item in payload["butce_hedefleri"]
+    ])
+
+    sheet = workbook.create_sheet("Tekrarlayan Odemeler")
+    _append_rows(sheet, ["Odeme", "Finans Turu", "Kategori", "Tutar", "Baslangic", "Tekrar", "Aralik", "Aktif", "Durum"], [
+        [
+            item["odeme_adi"],
+            item["finans_turu"],
+            item["kategori_ad"],
+            item["tutar"],
+            item["baslangic_tarihi"],
+            item["tekrar_turu"],
+            item["tekrar_araligi"],
+            item["aktif"],
+            item["odeme_durumu"],
+        ]
+        for item in payload["tekrarlayan_odemeler"]
+    ])
+
+    sheet = workbook.create_sheet("Odeme Donemleri")
+    _append_rows(sheet, ["Tekrarlayan Odeme ID", "Yil", "Ay", "Vade", "Durum"], [
+        [
+            item["tekrarlayan_odeme_id"],
+            item["donem_yil"],
+            item["donem_ay"],
+            item["vade_tarihi"],
+            item["durum"],
+        ]
+        for item in payload["odeme_donemleri"]
+    ])
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    response = HttpResponse(
+        buffer.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = 'attachment; filename="finanstakip-yedek.xlsx"'
+    buffer.close()
+    return response
+
+
+@login_required
+def yedekleme_geri_yukle(request):
+    if request.method != "POST":
+        return redirect("yedekleme")
+
+    dosya = request.FILES.get("yedek_dosyasi")
+    if not dosya:
+        messages.error(request, "LÃ¼tfen bir JSON yedek dosyasÄ± seÃ§in.")
+        return redirect("yedekleme")
+
+    try:
+        payload = json.loads(dosya.read().decode("utf-8"))
+        with transaction.atomic():
+            sonuc = _restore_backup_payload(
+                request.user,
+                payload,
+                replace_existing=bool(request.POST.get("replace_existing")),
+            )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as hata:
+        messages.error(request, str(hata))
+    else:
+        messages.success(
+            request,
+            "Yedek geri yÃ¼klendi: "
+            f"{sonuc['gelirler']} gelir, {sonuc['giderler']} gider, "
+            f"{sonuc['kategoriler']} kategori, {sonuc['butce_hedefleri']} bÃ¼tÃ§e hedefi, "
+            f"{sonuc['tekrarlayan_odemeler']} tekrarlayan Ã¶deme ve {sonuc['odeme_donemleri']} Ã¶deme dÃ¶nemi iÅŸlendi.",
+        )
+
+    return redirect("yedekleme")
 
 
 def _pdf_font_adi():

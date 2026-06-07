@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Yedekleme | FinansTakip{% endblock %}
+{% block page_title %}Yedekleme{% endblock %}
+{% block page_subtitle %}Kendi verilerini Excel veya JSON olarak indir, JSON yedeğini güvenle geri yükle.{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-2">
+        <div class="card metric-card p-4">
+            <span class="metric-icon bg-success-subtle text-success mb-3"><i class="bi bi-arrow-down-circle"></i></span>
+            <div class="text-muted small fw-semibold">Gelirler</div>
+            <div class="metric-value">{{ gelir_sayisi }}</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-2">
+        <div class="card metric-card p-4">
+            <span class="metric-icon bg-danger-subtle text-danger mb-3"><i class="bi bi-arrow-up-circle"></i></span>
+            <div class="text-muted small fw-semibold">Giderler</div>
+            <div class="metric-value">{{ gider_sayisi }}</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-2">
+        <div class="card metric-card p-4">
+            <span class="metric-icon bg-primary-subtle text-primary mb-3"><i class="bi bi-tags"></i></span>
+            <div class="text-muted small fw-semibold">Kategoriler</div>
+            <div class="metric-value">{{ kategori_sayisi }}</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-2">
+        <div class="card metric-card p-4">
+            <span class="metric-icon bg-info-subtle text-info mb-3"><i class="bi bi-bullseye"></i></span>
+            <div class="text-muted small fw-semibold">Bütçeler</div>
+            <div class="metric-value">{{ butce_sayisi }}</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-2">
+        <div class="card metric-card p-4">
+            <span class="metric-icon bg-warning-subtle text-warning mb-3"><i class="bi bi-repeat"></i></span>
+            <div class="text-muted small fw-semibold">Ödemeler</div>
+            <div class="metric-value">{{ tekrarlayan_odeme_sayisi }}</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-2">
+        <div class="card metric-card p-4">
+            <span class="metric-icon bg-secondary-subtle text-secondary mb-3"><i class="bi bi-calendar-check"></i></span>
+            <div class="text-muted small fw-semibold">Dönemler</div>
+            <div class="metric-value">{{ odeme_donemi_sayisi }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-5">
+        <div class="card p-4 h-100">
+            <div class="card-toolbar mb-3">
+                <div>
+                    <h2 class="section-title mb-1">Dışa Aktar</h2>
+                    <div class="text-muted small">Excel raporu veya tam JSON yedeği indir.</div>
+                </div>
+            </div>
+            <div class="backup-action-grid">
+                <a class="backup-action" href="{% url 'yedekleme_excel' %}">
+                    <i class="bi bi-file-earmark-spreadsheet text-success"></i>
+                    <strong>Excel İndir</strong>
+                    <span>Gelir, gider, kategori, bütçe ve ödeme kayıtlarını sayfalı Excel dosyası olarak indir.</span>
+                </a>
+                <a class="backup-action" href="{% url 'yedekleme_json' %}">
+                    <i class="bi bi-filetype-json text-primary"></i>
+                    <strong>JSON Yedek İndir</strong>
+                    <span>Geri yükleme için tüm kişisel FinansTakip verilerini JSON dosyası olarak indir.</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-7">
+        <div class="card p-4 h-100">
+            <div class="card-toolbar mb-3">
+                <div>
+                    <h2 class="section-title mb-1">JSON Yedeği Geri Yükle</h2>
+                    <div class="text-muted small">Yalnızca kendi hesabına veri eklenir; başka kullanıcı verileri karışmaz.</div>
+                </div>
+            </div>
+            <form method="POST" action="{% url 'yedekleme_geri_yukle' %}" enctype="multipart/form-data" class="d-grid gap-3">
+                {% csrf_token %}
+                <div>
+                    <label for="yedek_dosyasi" class="form-label">JSON yedek dosyası</label>
+                    <input id="yedek_dosyasi" type="file" name="yedek_dosyasi" class="form-control" accept="application/json,.json" required>
+                </div>
+                <div class="form-check p-3 border rounded-3">
+                    <input class="form-check-input ms-0 me-2" type="checkbox" name="replace_existing" id="replace_existing">
+                    <label class="form-check-label" for="replace_existing">
+                        Mevcut verilerimi silip bu yedeği yükle
+                    </label>
+                    <div class="text-muted small mt-1">Seçilmezse yedekteki kayıtlar mevcut verilerine eklenir.</div>
+                </div>
+                <div class="alert alert-warning mb-0">
+                    Geri yükleme işlemi sadece giriş yaptığın kullanıcı hesabına uygulanır. Dosyanın güvenilir olduğundan emin ol.
+                </div>
+                <button class="btn btn-primary btn-icon justify-content-center">
+                    <i class="bi bi-cloud-arrow-up"></i>Yedeği Geri Yükle
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
