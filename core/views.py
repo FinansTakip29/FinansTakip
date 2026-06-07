@@ -315,9 +315,9 @@ def _odeme_donemi_gideri_olustur(donem):
 
 def _donem_durum_verisi(donem, bugun):
     if donem.durum == OdemeDonemi.ODENDI:
-        return {"deger": OdemeDonemi.ODENDI, "etiket": "Ã–dendi", "renk": "success"}
+        return {"deger": OdemeDonemi.ODENDI, "etiket": "Ödendi", "renk": "success"}
     if donem.durum == OdemeDonemi.IPTAL:
-        return {"deger": OdemeDonemi.IPTAL, "etiket": "Ä°ptal Edildi", "renk": "secondary"}
+        return {"deger": OdemeDonemi.IPTAL, "etiket": "İptal Edildi", "renk": "secondary"}
     if donem.vade_tarihi < bugun:
         return {"deger": OdemeDonemi.GECIKTI, "etiket": "Gecikti", "renk": "danger"}
     return {"deger": OdemeDonemi.BEKLIYOR, "etiket": "Bekliyor", "renk": "warning"}
@@ -385,14 +385,14 @@ def _odeme_durumu_verisi(odeme, vade_tarihi, bugun):
     if not odeme.aktif or odeme.odeme_durumu == TekrarlayanOdeme.IPTAL:
         return {
             "deger": TekrarlayanOdeme.IPTAL,
-            "etiket": "Ä°ptal edildi",
+            "etiket": "İptal edildi",
             "renk": "secondary",
         }
 
     if odeme.son_olusturma_tarihi == vade_tarihi and odeme.son_gider_id:
         return {
             "deger": TekrarlayanOdeme.ODENDI,
-            "etiket": "Ã–dendi",
+            "etiket": "Ödendi",
             "renk": "success",
         }
 
@@ -526,10 +526,10 @@ def _kategori_butce_verileri(kullanici, finans_turu):
         if harcanan > butce.hedef_tutar:
             renk = "danger"
             asilan_sayisi += 1
-            uyarilar.append(f"{butce.kategori.ad} bÃ¼tÃ§esi aÅŸÄ±ldÄ±.")
+            uyarilar.append(f"{butce.kategori.ad} bütçesi aşıldı.")
         elif oran_float >= 80:
             renk = "warning"
-            uyarilar.append(f"{butce.kategori.ad} bÃ¼tÃ§esinin %80'i aÅŸÄ±ldÄ±.")
+            uyarilar.append(f"{butce.kategori.ad} bütçesinin %80'i aşıldı.")
         else:
             renk = "success"
 
@@ -582,24 +582,24 @@ def _finansal_tavsiyeler(grafik_verileri, butce_verileri, odeme_verileri, katego
 
     if skor < 50:
         durum = {"etiket": "Kritik", "renk": "danger"}
-        tavsiyeler.append("Tasarruf oranÄ±nÄ±z kritik seviyede. Bu ay zorunlu olmayan harcamalarÄ± azaltmayÄ± deneyebilirsiniz.")
+        tavsiyeler.append("Tasarruf oranınız kritik seviyede. Bu ay zorunlu olmayan harcamaları azaltmayı deneyebilirsiniz.")
     elif skor < 70:
         durum = {"etiket": "Dikkat", "renk": "warning"}
-        tavsiyeler.append("Gelir/gider dengenizi yakÄ±ndan izleyin; bÃ¼tÃ§e sÄ±nÄ±rlarÄ±na yaklaÅŸan kategorileri kontrol edin.")
+        tavsiyeler.append("Gelir/gider dengenizi yakından izleyin; bütçe sınırlarına yaklaşan kategorileri kontrol edin.")
     elif skor < 85:
-        durum = {"etiket": "Ä°yi", "renk": "success"}
-        tavsiyeler.append("Bu ay finansal durumunuz iyi gÃ¶rÃ¼nÃ¼yor. Birikim hedeflerinize dÃ¼zenli katkÄ± yapabilirsiniz.")
+        durum = {"etiket": "İyi", "renk": "success"}
+        tavsiyeler.append("Bu ay finansal durumunuz iyi görünüyor. Birikim hedeflerinize düzenli katkı yapabilirsiniz.")
     else:
-        durum = {"etiket": "Ã‡ok iyi", "renk": "primary"}
-        tavsiyeler.append("Finansal saÄŸlÄ±ÄŸÄ±nÄ±z Ã§ok iyi. Birikim katkÄ±nÄ±zÄ± artÄ±rmayÄ± deÄŸerlendirebilirsiniz.")
+        durum = {"etiket": "Çok iyi", "renk": "primary"}
+        tavsiyeler.append("Finansal sağlığınız çok iyi. Birikim katkınızı artırmayı değerlendirebilirsiniz.")
 
     if butce_verileri["butce_uyari"] == "warning":
-        tavsiyeler.append("BÃ¼tÃ§e hedefinizin %80'ini aÅŸtÄ±nÄ±z. HarcamalarÄ±nÄ±zÄ± kontrol etmeniz iyi olur.")
+        tavsiyeler.append("Bütçe hedefinizin %80'ini aştınız. Harcamalarınızı kontrol etmeniz iyi olur.")
     elif butce_verileri["butce_uyari"] == "danger":
-        tavsiyeler.append("AylÄ±k bÃ¼tÃ§e hedefiniz aÅŸÄ±ldÄ±. Yeni harcamalarda daha seÃ§ici davranÄ±n.")
+        tavsiyeler.append("Aylık bütçe hedefiniz aşıldı. Yeni harcamalarda daha seçici davranın.")
 
     if odeme_verileri["geciken_odemeler"]:
-        tavsiyeler.append("Geciken Ã¶demeleriniz var. Ã–ncelikle bu Ã¶demeleri kapatmak finansal skorunuzu iyileÅŸtirir.")
+        tavsiyeler.append("Geciken ödemeleriniz var. Öncelikle bu ödemeleri kapatmak finansal skorunuzu iyileştirir.")
 
     for uyari in kategori_butce_verileri["kategori_butce_uyarilari"][:3]:
         tavsiyeler.append(uyari)
@@ -908,7 +908,7 @@ def _clear_user_backup_data(kullanici):
 
 def _restore_backup_payload(kullanici, payload, replace_existing=False):
     if not isinstance(payload, dict) or payload.get("meta", {}).get("app") != "FinansTakip":
-        raise ValueError("Bu dosya geÃƒÂ§erli bir FinansTakip yedeÃ„Å¸i deÃ„Å¸il.")
+        raise ValueError("Bu dosya geçerli bir FinansTakip yedeği değil.")
 
     if replace_existing:
         _clear_user_backup_data(kullanici)
@@ -1211,7 +1211,7 @@ def yedekleme_geri_yukle(request):
 
     dosya = request.FILES.get("yedek_dosyasi")
     if not dosya:
-        messages.error(request, "LÃƒÂ¼tfen bir JSON yedek dosyasÃ„Â± seÃƒÂ§in.")
+        messages.error(request, "Lütfen bir JSON yedek dosyası seçin.")
         return redirect("yedekleme")
 
     try:
@@ -1359,10 +1359,10 @@ def butce_hedefi(request):
         try:
             hedef_tutar = Decimal(hedef_tutar)
         except (InvalidOperation, TypeError):
-            hata = "LÃ¼tfen geÃ§erli bir bÃ¼tÃ§e hedefi girin."
+            hata = "Lütfen geçerli bir bütçe hedefi girin."
         else:
             if hedef_tutar <= 0:
-                hata = "BÃ¼tÃ§e hedefi sÄ±fÄ±rdan bÃ¼yÃ¼k olmalÄ±dÄ±r."
+                hata = "Bütçe hedefi sıfırdan büyük olmalıdır."
             else:
                 hedef, _ = ButceHedefi.objects.update_or_create(
                     kullanici=request.user,
@@ -1398,11 +1398,11 @@ def kategori_butceleri(request):
         hedef_tutar = _parse_decimal(request.POST.get("hedef_tutar"))
 
         if not kategori:
-            hata = "Kategori bÃ¼tÃ§esi iÃ§in seÃ§ili finans tÃ¼rÃ¼ne ait gider kategorisi seÃ§melisin."
+            hata = "Kategori bütçesi için seçili finans türüne ait gider kategorisi seçmelisin."
         elif ay < 1 or ay > 12:
-            hata = "Ay deÄŸeri 1 ile 12 arasÄ±nda olmalÄ±dÄ±r."
+            hata = "Ay değeri 1 ile 12 arasında olmalıdır."
         elif not hedef_tutar or hedef_tutar <= 0:
-            hata = "Hedef tutar sÄ±fÄ±rdan bÃ¼yÃ¼k olmalÄ±dÄ±r."
+            hata = "Hedef tutar sıfırdan büyük olmalıdır."
         else:
             KategoriButcesi.objects.update_or_create(
                 kullanici=request.user,
@@ -1412,7 +1412,7 @@ def kategori_butceleri(request):
                 ay=ay,
                 defaults={"hedef_tutar": hedef_tutar},
             )
-            messages.success(request, "Kategori bÃ¼tÃ§esi kaydedildi.")
+            messages.success(request, "Kategori bütçesi kaydedildi.")
             return redirect(f"/kategori-butceleri/?finans_turu={finans_turu}&yil={yil}&ay={ay}")
 
     butceler = KategoriButcesi.objects.filter(
@@ -1471,11 +1471,11 @@ def kategori_butcesi_duzenle(request, id):
         ay = _parse_int(request.POST.get("ay"), butce.ay)
 
         if not kategori:
-            hata = "SeÃ§ili finans tÃ¼rÃ¼ne ait gider kategorisi seÃ§melisin."
+            hata = "Seçili finans türüne ait gider kategorisi seçmelisin."
         elif ay < 1 or ay > 12:
-            hata = "Ay deÄŸeri 1 ile 12 arasÄ±nda olmalÄ±dÄ±r."
+            hata = "Ay değeri 1 ile 12 arasında olmalıdır."
         elif not hedef_tutar or hedef_tutar <= 0:
-            hata = "Hedef tutar sÄ±fÄ±rdan bÃ¼yÃ¼k olmalÄ±dÄ±r."
+            hata = "Hedef tutar sıfırdan büyük olmalıdır."
         elif KategoriButcesi.objects.filter(
             kullanici=request.user,
             finans_turu=finans_turu,
@@ -1483,7 +1483,7 @@ def kategori_butcesi_duzenle(request, id):
             yil=yil,
             ay=ay,
         ).exclude(id=butce.id).exists():
-            hata = "Bu kategori iÃ§in aynÄ± dÃ¶nemde zaten bÃ¼tÃ§e var."
+            hata = "Bu kategori için aynı dönemde zaten bütçe var."
         else:
             butce.finans_turu = finans_turu
             butce.kategori = kategori
@@ -1491,7 +1491,7 @@ def kategori_butcesi_duzenle(request, id):
             butce.ay = ay
             butce.hedef_tutar = hedef_tutar
             butce.save()
-            messages.success(request, "Kategori bÃ¼tÃ§esi gÃ¼ncellendi.")
+            messages.success(request, "Kategori bütçesi güncellendi.")
             return redirect(f"/kategori-butceleri/?finans_turu={finans_turu}&yil={yil}&ay={ay}")
 
     return render(request, "kategori_butcesi_duzenle.html", {
@@ -1509,7 +1509,7 @@ def kategori_butcesi_sil(request, id):
     yil = butce.yil
     ay = butce.ay
     butce.delete()
-    messages.success(request, "Kategori bÃ¼tÃ§esi silindi.")
+    messages.success(request, "Kategori bütçesi silindi.")
     return redirect(f"/kategori-butceleri/?finans_turu={finans_turu}&yil={yil}&ay={ay}")
 
 
@@ -1525,11 +1525,11 @@ def birikim_hedefleri(request):
         hedef_adi = request.POST.get("hedef_adi", "").strip()
 
         if not hedef_adi:
-            hata = "Hedef adÄ± zorunludur."
+            hata = "Hedef adı zorunludur."
         elif not hedef_tutar or hedef_tutar <= 0:
-            hata = "Hedef tutar sÄ±fÄ±rdan bÃ¼yÃ¼k olmalÄ±dÄ±r."
+            hata = "Hedef tutar sıfırdan büyük olmalıdır."
         elif mevcut_tutar < 0 or aylik_katki < 0:
-            hata = "Mevcut tutar ve aylÄ±k katkÄ± negatif olamaz."
+            hata = "Mevcut tutar ve aylık katkı negatif olamaz."
         else:
             BirikimHedefi.objects.create(
                 kullanici=request.user,
@@ -1542,7 +1542,7 @@ def birikim_hedefleri(request):
                 aktif=bool(request.POST.get("aktif")),
                 aciklama=request.POST.get("aciklama", "").strip(),
             )
-            messages.success(request, "Birikim hedefi oluÅŸturuldu.")
+            messages.success(request, "Birikim hedefi oluşturuldu.")
             return redirect(f"/birikim-hedefleri/?finans_turu={finans_turu}")
 
     hedefler = _birikim_hedefi_verileri(request.user, finans_turu)["birikim_hedefi_kayitlari"]
@@ -1572,11 +1572,11 @@ def birikim_hedefi_duzenle(request, id):
         hedef_adi = request.POST.get("hedef_adi", "").strip()
 
         if not hedef_adi:
-            hata = "Hedef adÄ± zorunludur."
+            hata = "Hedef adı zorunludur."
         elif not hedef_tutar or hedef_tutar <= 0:
-            hata = "Hedef tutar sÄ±fÄ±rdan bÃ¼yÃ¼k olmalÄ±dÄ±r."
+            hata = "Hedef tutar sıfırdan büyük olmalıdır."
         elif mevcut_tutar < 0 or aylik_katki < 0:
-            hata = "Mevcut tutar ve aylÄ±k katkÄ± negatif olamaz."
+            hata = "Mevcut tutar ve aylık katkı negatif olamaz."
         else:
             hedef.finans_turu = finans_turu
             hedef.hedef_adi = hedef_adi
@@ -1587,7 +1587,7 @@ def birikim_hedefi_duzenle(request, id):
             hedef.aktif = bool(request.POST.get("aktif"))
             hedef.aciklama = request.POST.get("aciklama", "").strip()
             hedef.save()
-            messages.success(request, "Birikim hedefi gÃ¼ncellendi.")
+            messages.success(request, "Birikim hedefi güncellendi.")
             return redirect(f"/birikim-hedefleri/?finans_turu={finans_turu}")
 
     return render(request, "birikim_hedefi_duzenle.html", {
@@ -1612,11 +1612,11 @@ def birikim_hedefi_katki(request, id):
     if request.method == "POST":
         tutar = _parse_decimal(request.POST.get("katki_tutar"))
         if not tutar or tutar <= 0:
-            messages.error(request, "KatkÄ± tutarÄ± sÄ±fÄ±rdan bÃ¼yÃ¼k olmalÄ±dÄ±r.")
+            messages.error(request, "Katkı tutarı sıfırdan büyük olmalıdır.")
         else:
             hedef.mevcut_tutar += tutar
             hedef.save(update_fields=["mevcut_tutar"])
-            messages.success(request, "KatkÄ± hedefe eklendi.")
+            messages.success(request, "Katkı hedefe eklendi.")
     return redirect(f"/birikim-hedefleri/?finans_turu={hedef.finans_turu}")
 
 
@@ -1630,7 +1630,7 @@ def kategoriler(request):
         tur = request.POST.get("tur")
 
         if not ad or tur not in [Kategori.GELIR, Kategori.GIDER]:
-            hata = "LÃ¼tfen kategori adÄ± ve tÃ¼rÃ¼nÃ¼ doÄŸru girin."
+            hata = "Lütfen kategori adı ve türünü doğru girin."
         elif Kategori.objects.filter(kullanici=request.user, finans_turu=finans_turu, ad=ad, tur=tur).exists():
             hata = "Bu kategori zaten mevcut."
         else:
@@ -1661,7 +1661,7 @@ def kategori_duzenle(request, id):
         finans_turu = _secilen_finans_turu(request.POST)
 
         if not ad or tur not in [Kategori.GELIR, Kategori.GIDER]:
-            hata = "LÃ¼tfen kategori adÄ± ve tÃ¼rÃ¼nÃ¼ doÄŸru girin."
+            hata = "Lütfen kategori adı ve türünü doğru girin."
         elif Kategori.objects.filter(kullanici=request.user, finans_turu=finans_turu, ad=ad, tur=tur).exclude(id=kategori.id).exists():
             hata = "Bu kategori zaten mevcut."
         else:
@@ -1715,15 +1715,15 @@ def tekrarlayan_odemeler(request):
             tekrar_araligi = 0
 
         if not kategori:
-            hata = "Tekrarlayan Ã¶deme iÃ§in seÃ§ili finans tÃ¼rÃ¼ne ait gider kategorisi seÃ§melisin."
+            hata = "Tekrarlayan ödeme için seçili finans türüne ait gider kategorisi seçmelisin."
         elif tekrar_turu not in [deger for deger, _ in TekrarlayanOdeme.TEKRAR_TURU_SECENEKLERI]:
-            hata = "LÃ¼tfen geÃ§erli bir tekrar tÃ¼rÃ¼ seÃ§in."
+            hata = "Lütfen geçerli bir tekrar türü seçin."
         elif tekrar_araligi <= 0:
-            hata = "Tekrar aralÄ±ÄŸÄ± pozitif tam sayÄ± olmalÄ±dÄ±r."
+            hata = "Tekrar aralığı pozitif tam sayı olmalıdır."
         elif not request.POST.get("odeme_adi", "").strip():
-            hata = "Ã–deme adÄ± zorunludur."
+            hata = "Ödeme adı zorunludur."
         elif tutar is None or tutar <= 0:
-            hata = "Tutar sÄ±fÄ±rdan bÃ¼yÃ¼k olmalÄ±dÄ±r."
+            hata = "Tutar sıfırdan büyük olmalıdır."
         else:
             aktif = bool(request.POST.get("aktif"))
             TekrarlayanOdeme.objects.create(
@@ -1806,15 +1806,15 @@ def tekrarlayan_odeme_duzenle(request, id):
             tekrar_araligi = 0
 
         if not kategori:
-            hata = "Tekrarlayan Ã¶deme iÃ§in seÃ§ili finans tÃ¼rÃ¼ne ait gider kategorisi seÃ§melisin."
+            hata = "Tekrarlayan ödeme için seçili finans türüne ait gider kategorisi seçmelisin."
         elif tekrar_turu not in [deger for deger, _ in TekrarlayanOdeme.TEKRAR_TURU_SECENEKLERI]:
-            hata = "LÃ¼tfen geÃ§erli bir tekrar tÃ¼rÃ¼ seÃ§in."
+            hata = "Lütfen geçerli bir tekrar türü seçin."
         elif tekrar_araligi <= 0:
-            hata = "Tekrar aralÄ±ÄŸÄ± pozitif tam sayÄ± olmalÄ±dÄ±r."
+            hata = "Tekrar aralığı pozitif tam sayı olmalıdır."
         elif not request.POST.get("odeme_adi", "").strip():
-            hata = "Ã–deme adÄ± zorunludur."
+            hata = "Ödeme adı zorunludur."
         elif tutar is None or tutar <= 0:
-            hata = "Tutar sÄ±fÄ±rdan bÃ¼yÃ¼k olmalÄ±dÄ±r."
+            hata = "Tutar sıfırdan büyük olmalıdır."
         else:
             aktif = bool(request.POST.get("aktif"))
             odeme.finans_turu = finans_turu
@@ -1895,7 +1895,7 @@ def gelir_ekle(request):
             ).first()
 
         if not kategori:
-            hata = "Gelir kaydÄ± iÃ§in Ã¶nce gelir kategorisi seÃ§melisin."
+            hata = "Gelir kaydı için önce gelir kategorisi seçmelisin."
         else:
             Gelir.objects.create(
                 kullanici=request.user,
@@ -1951,7 +1951,7 @@ def gider_ekle(request):
             ).first()
 
         if not kategori:
-            hata = "Gider kaydÄ± iÃ§in Ã¶nce gider kategorisi seÃ§melisin."
+            hata = "Gider kaydı için önce gider kategorisi seçmelisin."
         else:
             Gider.objects.create(
                 kullanici=request.user,
@@ -2035,18 +2035,18 @@ def rapor_pdf(request):
 
     pdf_icerigi = [
         Paragraph("Finans Raporu", baslik_stili),
-        Paragraph(f"Rapor dÃ¶nemi: {ay or 'TÃ¼m kayÄ±tlar'}", normal_stili),
+        Paragraph(f"Rapor dönemi: {ay or 'Tüm kayıtlar'}", normal_stili),
         Spacer(1, 12),
     ]
 
     ozet_tablosu = Table([
-        ["BaÅŸlÄ±k", "Tutar"],
+        ["Başlık", "Tutar"],
         ["Toplam Gelir", f"{veriler['toplam_gelir']} TL"],
         ["Toplam Gider", f"{veriler['toplam_gider']} TL"],
         ["Kalan Bakiye", f"{veriler['bakiye']} TL"],
-        ["AylÄ±k Gelir", f"{veriler['aylik_gelir']} TL"],
-        ["AylÄ±k Gider", f"{veriler['aylik_gider']} TL"],
-        ["AylÄ±k Bakiye", f"{veriler['aylik_bakiye']} TL"],
+        ["Aylık Gelir", f"{veriler['aylik_gelir']} TL"],
+        ["Aylık Gider", f"{veriler['aylik_gider']} TL"],
+        ["Aylık Bakiye", f"{veriler['aylik_bakiye']} TL"],
     ], colWidths=[8 * cm, 6 * cm])
     ozet_tablosu.setStyle(TableStyle([
         ("FONTNAME", (0, 0), (-1, -1), font_adi),
@@ -2060,7 +2060,7 @@ def rapor_pdf(request):
     ]))
     pdf_icerigi.append(ozet_tablosu)
     pdf_icerigi.append(Spacer(1, 18))
-    pdf_icerigi.append(Paragraph("Kategori BazlÄ± Giderler", normal_stili))
+    pdf_icerigi.append(Paragraph("Kategori Bazlı Giderler", normal_stili))
     pdf_icerigi.append(Spacer(1, 8))
 
     kategori_satirlari = [["Kategori", "Tutar"]]
@@ -2071,7 +2071,7 @@ def rapor_pdf(request):
         ])
 
     if len(kategori_satirlari) == 1:
-        kategori_satirlari.append(["KayÄ±t bulunamadÄ±", "0 TL"])
+        kategori_satirlari.append(["Kayıt bulunamadı", "0 TL"])
 
     kategori_tablosu = Table(kategori_satirlari, colWidths=[8 * cm, 6 * cm])
     kategori_tablosu.setStyle(TableStyle([
@@ -2130,7 +2130,7 @@ def gider_duzenle(request, id):
             ).first()
 
         if not kategori:
-            hata = "Gider kaydÄ± iÃ§in gider kategorisi seÃ§melisin."
+            hata = "Gider kaydı için gider kategorisi seçmelisin."
         else:
             gider.tarih = request.POST["tarih"]
             gider.aciklama = request.POST["aciklama"]
@@ -2171,7 +2171,7 @@ def gelir_duzenle(request, id):
             ).first()
 
         if not kategori:
-            hata = "Gelir kaydÄ± iÃ§in gelir kategorisi seÃ§melisin."
+            hata = "Gelir kaydı için gelir kategorisi seçmelisin."
         else:
             gelir.tarih = request.POST["tarih"]
             gelir.aciklama = request.POST["aciklama"]
