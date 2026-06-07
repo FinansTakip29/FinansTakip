@@ -40,6 +40,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Mobil standalone görünüm ve modern PWA splash/offline ekran stilleri eklendi.
 
 ### Düzeltildi
+- iPhone standalone PWA girişlerinde eski cache'lenmiş CSRF token'ı nedeniyle oluşabilen 403 hatasını önlemek için auth sayfaları cache dışı bırakıldı, service worker auth/navigasyon cache davranışı güvenli hale getirildi ve Render CSRF/host cookie ayarları güçlendirildi.
 - Raporlar sayfasında grafik scriptlerinin `scripts` bloğu dışında kalması nedeniyle oluşan `TemplateSyntaxError` hatası düzeltildi.
 - Tekrarlayan ödeme tablosunda eksik kalan `tekrar_turu` ve `tekrar_araligi` kolonlarını veri silmeden ekleyen migration düzeltmesi eklendi.
 

@@ -65,6 +65,11 @@ if not SECRET_KEY:
     else:
         raise RuntimeError('SECRET_KEY environment variable must be set when DEBUG=False.')
 
+DEFAULT_RENDER_HOSTS = [
+    'finanstakip-61ls.onrender.com',
+    'finanstakip-6l1s.onrender.com',
+]
+
 ALLOWED_HOSTS = [host for host in [normalize_host(value) for value in env_list('ALLOWED_HOSTS')] if host]
 
 if DEBUG and not ALLOWED_HOSTS:
@@ -75,9 +80,16 @@ render_external_hostname = normalize_host(render_external_hostname) if render_ex
 if render_external_hostname and render_external_hostname not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(render_external_hostname)
 
+if not DEBUG:
+    for host in DEFAULT_RENDER_HOSTS:
+        if host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(host)
+
 csrf_trusted_origins = [origin for origin in [normalize_origin(value) for value in env_list('CSRF_TRUSTED_ORIGINS')] if origin]
 if render_external_hostname:
     csrf_trusted_origins.append(f'https://{render_external_hostname}')
+if not DEBUG:
+    csrf_trusted_origins.extend([f'https://{host}' for host in DEFAULT_RENDER_HOSTS])
 CSRF_TRUSTED_ORIGINS = sorted(set(csrf_trusted_origins))
 
 sentry_dsn = os.environ.get('SENTRY_DSN')
@@ -207,6 +219,9 @@ STORAGES = {
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False
 SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', not DEBUG)
 
 if not DEBUG:

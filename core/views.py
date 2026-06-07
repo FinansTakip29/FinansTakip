@@ -10,6 +10,8 @@ from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.models import Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
@@ -73,10 +75,8 @@ def manifest(request):
 
 
 def service_worker(request):
-    cache_name = "finanstakip-pwa-v1"
+    cache_name = "finanstakip-pwa-v2"
     static_assets = [
-        "/",
-        "/giris/",
         "/offline/",
         "/favicon.ico",
         static("css/app.css"),
@@ -87,6 +87,11 @@ def service_worker(request):
 const CACHE_NAME = {json.dumps(cache_name)};
 const OFFLINE_URL = "/offline/";
 const STATIC_ASSETS = {json.dumps(static_assets)};
+const AUTH_PATHS = ["/giris/", "/kayit/", "/cikis/"];
+
+function isAuthRequest(url) {{
+    return AUTH_PATHS.some((path) => url.pathname.startsWith(path));
+}}
 
 self.addEventListener("install", (event) => {{
     event.waitUntil(
@@ -106,18 +111,19 @@ self.addEventListener("activate", (event) => {{
 
 self.addEventListener("fetch", (event) => {{
     const request = event.request;
+    const url = new URL(request.url);
     if (request.method !== "GET") {{
+        return;
+    }}
+
+    if (isAuthRequest(url)) {{
+        event.respondWith(fetch(request));
         return;
     }}
 
     if (request.mode === "navigate") {{
         event.respondWith(
             fetch(request)
-                .then((response) => {{
-                    const copy = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-                    return response;
-                }})
                 .catch(() => caches.match(request).then((cached) => cached || caches.match(OFFLINE_URL)))
         );
         return;
@@ -126,7 +132,7 @@ self.addEventListener("fetch", (event) => {{
     event.respondWith(
         caches.match(request)
             .then((cached) => cached || fetch(request).then((response) => {{
-                if (response && response.status === 200) {{
+                if (response && response.status === 200 && !isAuthRequest(url)) {{
                     const copy = response.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
                 }}
@@ -612,6 +618,8 @@ def _pdf_font_adi():
     return "Helvetica"
 
 
+@never_cache
+@ensure_csrf_cookie
 def kayit(request):
     if request.user.is_authenticated:
         return redirect("home")
@@ -628,6 +636,8 @@ def kayit(request):
     return render(request, "kayit.html", {"form": form})
 
 
+@never_cache
+@ensure_csrf_cookie
 def giris(request):
     if request.user.is_authenticated:
         return redirect("home")
@@ -646,6 +656,7 @@ def giris(request):
 
 
 @login_required
+@never_cache
 def cikis(request):
     logout(request)
     return redirect("giris")
