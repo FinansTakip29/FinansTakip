@@ -11,6 +11,7 @@ urlpatterns = [
     path('giris/', views.giris, name='giris'),
     path('cikis/', views.cikis, name='cikis'),
     path('', views.home, name='home'),
+    path('dashboard/', views.home, name='dashboard'),
     path('butce-hedefi/', views.butce_hedefi, name='butce_hedefi'),
     path('hizli-gider-ekle/', views.hizli_gider_ekle, name='hizli_gider_ekle'),
     path('kategori-butceleri/', views.kategori_butceleri, name='kategori_butceleri'),

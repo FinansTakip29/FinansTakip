@@ -129,38 +129,38 @@
                     <h2 class="section-title mb-1">Finansal Sağlık</h2>
                     <div class="text-muted small">Bu ayki gelir, gider ve bütçe kullanımına göre hesaplandı.</div>
                 </div>
-                <span class="health-score">{{ finansal_saglik_puani }}/100</span>
+                <span class="health-score">{{ finansal_saglik_puani|default:50 }}/100</span>
             </div>
             <div class="row g-3">
                 <div class="col-md-3 col-6">
                     <div class="summary-tile">
                         <span>Tasarruf Oranı</span>
-                        <strong>%{{ tasarruf_orani }}</strong>
+                        <strong>%{{ tasarruf_orani|default:0 }}</strong>
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
                     <div class="summary-tile">
                         <span>Aylık Nakit Akışı</span>
-                        <strong>{{ aylik_nakit_akisi }} TL</strong>
+                        <strong>{{ aylik_nakit_akisi|default:0 }} TL</strong>
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
                     <div class="summary-tile">
                         <span>Geçen Aya Göre</span>
-                        <strong class="{% if gecen_aya_gore_degisim >= 0 %}text-success{% else %}text-danger{% endif %}">
-                            %{{ gecen_aya_gore_degisim }}
+                        <strong class="{% if gecen_aya_gore_degisim|default:0 >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            %{{ gecen_aya_gore_degisim|default:0 }}
                         </strong>
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
                     <div class="summary-tile">
                         <span>Bu Ay Gider</span>
-                        <strong>{{ bu_ay_gider }} TL</strong>
+                        <strong>{{ bu_ay_gider|default:0 }} TL</strong>
                     </div>
                 </div>
             </div>
             <div class="health-track mt-4">
-                <div class="health-track-fill {% if finansal_saglik_puani >= 70 %}bg-success{% elif finansal_saglik_puani >= 45 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ finansal_saglik_puani }}%"></div>
+                <div class="health-track-fill {% if finansal_saglik_puani|default:50 >= 70 %}bg-success{% elif finansal_saglik_puani|default:50 >= 45 %}bg-warning{% else %}bg-danger{% endif %}" style="width: {{ finansal_saglik_puani|default:50 }}%"></div>
             </div>
         </div>
     </div>
@@ -228,19 +228,19 @@
                 <div class="col-sm-4">
                     <div class="summary-tile">
                         <span>Gider</span>
-                        <strong>{{ bu_ay_gider }} TL</strong>
+                        <strong>{{ bu_ay_gider|default:0 }} TL</strong>
                     </div>
                 </div>
                 <div class="col-sm-4">
                     <div class="summary-tile">
                         <span>Kalan</span>
-                        <strong>{% if kalan_butce is not None %}{{ kalan_butce }} TL{% else %}-{% endif %}</strong>
+                        <strong>{% if kalan_butce is not None %}{{ kalan_butce|default:0 }} TL{% else %}-{% endif %}</strong>
                     </div>
                 </div>
             </div>
             <div class="progress mt-4" role="progressbar" aria-label="Bütçe kullanım oranı">
-                <div class="progress-bar {% if butce_uyari == 'danger' %}bg-danger{% elif butce_uyari == 'warning' %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ butce_kullanim_orani }}%">
-                    %{{ butce_kullanim_orani }}
+                <div class="progress-bar {% if butce_uyari == 'danger' %}bg-danger{% elif butce_uyari == 'warning' %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ butce_kullanim_orani|default:0 }}%">
+                    %{{ butce_kullanim_orani|default:0 }}
                 </div>
             </div>
             {% if butce_uyari == "warning" %}
@@ -327,10 +327,10 @@
                     <div>
                         <div class="d-flex justify-content-between gap-2 flex-wrap mb-1">
                             <strong>{{ kayit.butce.kategori.ad }}</strong>
-                            <span class="text-muted small">{{ kayit.harcanan }} / {{ kayit.butce.hedef_tutar }} TL</span>
+                            <span class="text-muted small">{{ kayit.harcanan|default:0 }} / {{ kayit.butce.hedef_tutar|default:0 }} TL</span>
                         </div>
                         <div class="progress">
-                            <div class="progress-bar bg-{{ kayit.renk }}" style="width: {{ kayit.progress_orani }}%">%{{ kayit.oran }}</div>
+                            <div class="progress-bar bg-{{ kayit.renk|default:'success' }}" style="width: {{ kayit.progress_orani|default:0 }}%">%{{ kayit.oran|default:0 }}</div>
                         </div>
                         {% if kayit.renk == "danger" %}
                             <div class="text-danger small fw-semibold mt-1">{{ kayit.butce.kategori.ad }} bütçesi aşıldı.</div>
@@ -360,10 +360,10 @@
                     <div>
                         <div class="d-flex justify-content-between gap-2 flex-wrap mb-1">
                             <strong>{{ kayit.hedef.hedef_adi }}</strong>
-                            <span class="text-muted small">Kalan {{ kayit.kalan }} TL</span>
+                            <span class="text-muted small">Kalan {{ kayit.kalan|default:0 }} TL</span>
                         </div>
                         <div class="progress">
-                            <div class="progress-bar bg-success" style="width: {{ kayit.progress_orani }}%">%{{ kayit.oran }}</div>
+                            <div class="progress-bar bg-success" style="width: {{ kayit.progress_orani|default:0 }}%">%{{ kayit.oran|default:0 }}</div>
                         </div>
                         {% if kayit.tahmini_ay %}
                             <div class="text-muted small mt-1">Aylık katkıyla tahmini {{ kayit.tahmini_ay }} ay.</div>
@@ -381,15 +381,20 @@
     <div class="card-toolbar mb-3">
         <div>
             <h2 class="section-title mb-1">Finansal Öneriler</h2>
-            <div class="text-muted small">Skor durumu: {{ finansal_saglik_durumu.etiket }}</div>
+            <div class="text-muted small">Skor durumu: {{ finansal_saglik_durumu.etiket|default:"Dikkat" }}</div>
         </div>
-        <span class="badge text-bg-{{ finansal_saglik_durumu.renk }} rounded-pill px-3 py-2">{{ finansal_saglik_puani }}/100</span>
+        <span class="badge text-bg-{{ finansal_saglik_durumu.renk|default:'warning' }} rounded-pill px-3 py-2">{{ finansal_saglik_puani|default:50 }}/100</span>
     </div>
     <div class="notification-stack">
         {% for tavsiye in finansal_tavsiyeler %}
-            <div class="notification-item notification-{{ finansal_saglik_durumu.renk }}">
+            <div class="notification-item notification-{{ finansal_saglik_durumu.renk|default:'warning' }}">
                 <i class="bi bi-lightbulb"></i>
                 <div><strong>Öneri</strong><span>{{ tavsiye }}</span></div>
+            </div>
+        {% empty %}
+            <div class="notification-item notification-warning">
+                <i class="bi bi-lightbulb"></i>
+                <div><strong>Öneri</strong><span>Finansal öneriler için henüz yeterli veri yok.</span></div>
             </div>
         {% endfor %}
     </div>

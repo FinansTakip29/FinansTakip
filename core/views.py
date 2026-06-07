@@ -1,6 +1,7 @@
-﻿from io import BytesIO
+from io import BytesIO
 import calendar
 import json
+import logging
 from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from datetime import date, timedelta
 from pathlib import Path
@@ -42,6 +43,8 @@ from .models import (
     TekrarlayanOdeme,
 )
 
+
+logger = logging.getLogger(__name__)
 
 def health(request):
     return JsonResponse({"status": "ok"})
@@ -238,6 +241,50 @@ def _finans_turu_context(finans_turu):
     return {
         "finans_turleri": FINANS_TURU_SECENEKLERI,
         "secilen_finans_turu": finans_turu,
+    }
+
+
+def _dashboard_default_context(finans_turu):
+    bugun = timezone.now().date()
+    aylar = []
+    ay_baslangici = bugun.replace(day=1)
+    for indeks in range(11, -1, -1):
+        ay_tarihi = _ay_ekle(ay_baslangici, -indeks)
+        aylar.append(f"{ay_tarihi.month:02d}/{ay_tarihi.year}")
+
+    return {
+        **_finans_turu_context(finans_turu),
+        "butce_hedefi": None,
+        "butce_yil": bugun.year,
+        "butce_ay": bugun.month,
+        "aylik_butce_hedefi": None,
+        "bu_ay_gider": Decimal("0"),
+        "kalan_butce": None,
+        "butce_uyari": None,
+        "butce_kullanim_orani": 0,
+        "bu_ay_tekrarlayan_odemeler": [],
+        "yaklasan_odemeler": [],
+        "geciken_odemeler": [],
+        "kategori_butce_kayitlari": [],
+        "kategori_butce_uyarilari": [],
+        "kategori_butce_asim_sayisi": 0,
+        "birikim_hedefi_kayitlari": [],
+        "dashboard_aylik_gelir": Decimal("0"),
+        "dashboard_aylik_gider": Decimal("0"),
+        "tasarruf_orani": 0,
+        "finansal_saglik_puani": 50,
+        "finansal_skor": 50,
+        "gecen_aya_gore_degisim": 0,
+        "aylik_nakit_akisi": Decimal("0"),
+        "trend_aylari": aylar,
+        "trend_gelirleri": [0 for _ in aylar],
+        "trend_giderleri": [0 for _ in aylar],
+        "kategori_grafik_adlari": [],
+        "kategori_grafik_tutarlari": [],
+        "finansal_saglik_durumu": {"etiket": "Dikkat", "renk": "warning"},
+        "finansal_tavsiyeler": [
+            "Finansal öneriler hazırlanırken geçici bir sorun oluştu. Verileriniz korunuyor; sayfayı daha sonra tekrar kontrol edebilirsiniz."
+        ],
     }
 
 
@@ -593,7 +640,7 @@ def _birikim_hedefi_verileri(kullanici, finans_turu):
 
 
 def _finansal_tavsiyeler(grafik_verileri, butce_verileri, odeme_verileri, kategori_butce_verileri):
-    skor = grafik_verileri["finansal_saglik_puani"]
+    skor = grafik_verileri.get("finansal_saglik_puani", 50) or 50
     tavsiyeler = []
 
     if skor < 50:
@@ -609,15 +656,15 @@ def _finansal_tavsiyeler(grafik_verileri, butce_verileri, odeme_verileri, katego
         durum = {"etiket": "Çok iyi", "renk": "primary"}
         tavsiyeler.append("Finansal sağlığınız çok iyi. Birikim katkınızı artırmayı değerlendirebilirsiniz.")
 
-    if butce_verileri["butce_uyari"] == "warning":
+    if butce_verileri.get("butce_uyari") == "warning":
         tavsiyeler.append("Bütçe hedefinizin %80'ini aştınız. Harcamalarınızı kontrol etmeniz iyi olur.")
-    elif butce_verileri["butce_uyari"] == "danger":
+    elif butce_verileri.get("butce_uyari") == "danger":
         tavsiyeler.append("Aylık bütçe hedefiniz aşıldı. Yeni harcamalarda daha seçici davranın.")
 
-    if odeme_verileri["geciken_odemeler"]:
+    if odeme_verileri.get("geciken_odemeler"):
         tavsiyeler.append("Geciken ödemeleriniz var. Öncelikle bu ödemeleri kapatmak finansal skorunuzu iyileştirir.")
 
-    for uyari in kategori_butce_verileri["kategori_butce_uyarilari"][:3]:
+    for uyari in kategori_butce_verileri.get("kategori_butce_uyarilari", [])[:3]:
         tavsiyeler.append(uyari)
 
     return {
@@ -713,7 +760,7 @@ def _dashboard_grafik_verileri(kullanici, finans_turu, butce_verileri, odeme_ver
         tarih__year=bugun.year,
         tarih__month=bugun.month,
     ).aggregate(Sum("tutar"))["tutar__sum"] or 0
-    bu_ay_gider = butce_verileri["bu_ay_gider"]
+    bu_ay_gider = butce_verileri.get("bu_ay_gider", Decimal("0")) or Decimal("0")
     onceki_ay_gelir = Gelir.objects.filter(
         kullanici=kullanici,
         finans_turu=finans_turu,
@@ -735,14 +782,14 @@ def _dashboard_grafik_verileri(kullanici, finans_turu, butce_verileri, odeme_ver
         gecen_aya_gore_degisim = 100 if aylik_nakit_akisi > 0 else 0
 
     tasarruf_orani = (aylik_nakit_akisi / bu_ay_gelir) * 100 if bu_ay_gelir else 0
-    butce_kullanim_orani = Decimal(str(butce_verileri["butce_kullanim_orani"]))
-    geciken_odeme_sayisi = len(odeme_verileri["geciken_odemeler"])
+    butce_kullanim_orani = Decimal(str(butce_verileri.get("butce_kullanim_orani", 0) or 0))
+    geciken_odeme_sayisi = len(odeme_verileri.get("geciken_odemeler", []))
     kategori_asim_sayisi = 0
     if kategori_butce_verileri:
-        kategori_asim_sayisi = kategori_butce_verileri["kategori_butce_asim_sayisi"]
+        kategori_asim_sayisi = kategori_butce_verileri.get("kategori_butce_asim_sayisi", 0) or 0
     saglik_puani = 50
     saglik_puani += min(max(float(tasarruf_orani), -30), 30)
-    if butce_verileri["aylik_butce_hedefi"]:
+    if butce_verileri.get("aylik_butce_hedefi"):
         saglik_puani += max(0, 20 - (float(butce_kullanim_orani) / 5))
     saglik_puani -= min(geciken_odeme_sayisi * 10, 30)
     saglik_puani -= min(kategori_asim_sayisi * 8, 24)
@@ -1319,54 +1366,104 @@ def cikis(request):
 
 @login_required
 def home(request):
-    finans_turu = _secilen_finans_turu(request.GET)
+    try:
+        finans_turu = _secilen_finans_turu(request.GET)
+        context = _dashboard_default_context(finans_turu)
 
-    toplam_gelir = Gelir.objects.filter(kullanici=request.user, finans_turu=finans_turu).aggregate(
-        Sum("tutar")
-    )["tutar__sum"] or 0
+        toplam_gelir = Gelir.objects.filter(kullanici=request.user, finans_turu=finans_turu).aggregate(
+            Sum("tutar")
+        )["tutar__sum"] or Decimal("0")
 
-    toplam_gider = Gider.objects.filter(kullanici=request.user, finans_turu=finans_turu).aggregate(
-        Sum("tutar")
-    )["tutar__sum"] or 0
+        toplam_gider = Gider.objects.filter(kullanici=request.user, finans_turu=finans_turu).aggregate(
+            Sum("tutar")
+        )["tutar__sum"] or Decimal("0")
 
-    bakiye = toplam_gelir - toplam_gider
+        context.update({
+            "toplam_gelir": toplam_gelir,
+            "toplam_gider": toplam_gider,
+            "bakiye": toplam_gelir - toplam_gider,
+            "son_gelirler": Gelir.objects.filter(kullanici=request.user, finans_turu=finans_turu).order_by("-id")[:5],
+            "son_giderler": Gider.objects.filter(kullanici=request.user, finans_turu=finans_turu).order_by("-id")[:5],
+            "hizli_gider_kategorileri": Kategori.objects.filter(
+                kullanici=request.user,
+                finans_turu=finans_turu,
+                tur=Kategori.GIDER,
+            ).order_by("ad"),
+            "hizli_gider_acik": request.GET.get("quick_add") == "1",
+        })
 
-    son_gelirler = Gelir.objects.filter(kullanici=request.user, finans_turu=finans_turu).order_by("-id")[:5]
-    son_giderler = Gider.objects.filter(kullanici=request.user, finans_turu=finans_turu).order_by("-id")[:5]
-    hizli_gider_kategorileri = Kategori.objects.filter(
-        kullanici=request.user,
-        finans_turu=finans_turu,
-        tur=Kategori.GIDER,
-    ).order_by("ad")
+        try:
+            butce_verileri = _aylik_butce_verileri(request.user, finans_turu)
+        except Exception:
+            logger.exception("Dashboard budget context error")
+            butce_verileri = {key: context[key] for key in [
+                "butce_hedefi", "butce_yil", "butce_ay", "aylik_butce_hedefi",
+                "bu_ay_gider", "kalan_butce", "butce_uyari", "butce_kullanim_orani",
+                "finans_turleri", "secilen_finans_turu",
+            ]}
 
-    context = {
-        "toplam_gelir": toplam_gelir,
-        "toplam_gider": toplam_gider,
-        "bakiye": bakiye,
-        "son_gelirler": son_gelirler,
-        "son_giderler": son_giderler,
-        "hizli_gider_kategorileri": hizli_gider_kategorileri,
-        "hizli_gider_acik": request.GET.get("quick_add") == "1",
-    }
-    butce_verileri = _aylik_butce_verileri(request.user, finans_turu)
-    odeme_verileri = _tekrarlayan_odeme_verileri(request.user, finans_turu)
-    kategori_butce_verileri = _kategori_butce_verileri(request.user, finans_turu)
-    birikim_hedefi_verileri = _birikim_hedefi_verileri(request.user, finans_turu)
-    grafik_verileri = _dashboard_grafik_verileri(
-        request.user,
-        finans_turu,
-        butce_verileri,
-        odeme_verileri,
-        kategori_butce_verileri,
-    )
-    context.update(butce_verileri)
-    context.update(odeme_verileri)
-    context.update(kategori_butce_verileri)
-    context.update(birikim_hedefi_verileri)
-    context.update(grafik_verileri)
-    context.update(_finansal_tavsiyeler(grafik_verileri, butce_verileri, odeme_verileri, kategori_butce_verileri))
+        try:
+            odeme_verileri = _tekrarlayan_odeme_verileri(request.user, finans_turu)
+        except Exception:
+            logger.exception("Dashboard recurring payment context error")
+            odeme_verileri = {key: context[key] for key in [
+                "bu_ay_tekrarlayan_odemeler", "yaklasan_odemeler", "geciken_odemeler",
+            ]}
 
-    return render(request, "home.html", context)
+        try:
+            kategori_butce_verileri = _kategori_butce_verileri(request.user, finans_turu)
+        except Exception:
+            logger.exception("Dashboard category budget context error")
+            kategori_butce_verileri = {key: context[key] for key in [
+                "kategori_butce_kayitlari", "kategori_butce_uyarilari", "kategori_butce_asim_sayisi",
+            ]}
+
+        try:
+            birikim_hedefi_verileri = _birikim_hedefi_verileri(request.user, finans_turu)
+        except Exception:
+            logger.exception("Dashboard savings goal context error")
+            birikim_hedefi_verileri = {"birikim_hedefi_kayitlari": context["birikim_hedefi_kayitlari"]}
+
+        try:
+            grafik_verileri = _dashboard_grafik_verileri(
+                request.user,
+                finans_turu,
+                butce_verileri,
+                odeme_verileri,
+                kategori_butce_verileri,
+            )
+        except Exception:
+            logger.exception("Dashboard chart context error")
+            grafik_verileri = {key: context[key] for key in [
+                "dashboard_aylik_gelir", "dashboard_aylik_gider", "tasarruf_orani",
+                "finansal_saglik_puani", "gecen_aya_gore_degisim", "aylik_nakit_akisi",
+                "trend_aylari", "trend_gelirleri", "trend_giderleri",
+                "kategori_grafik_adlari", "kategori_grafik_tutarlari",
+            ]}
+
+        try:
+            tavsiye_verileri = _finansal_tavsiyeler(
+                grafik_verileri,
+                butce_verileri,
+                odeme_verileri,
+                kategori_butce_verileri,
+            )
+        except Exception:
+            logger.exception("Dashboard financial suggestion context error")
+            tavsiye_verileri = {key: context[key] for key in ["finansal_saglik_durumu", "finansal_tavsiyeler"]}
+
+        context.update(butce_verileri)
+        context.update(odeme_verileri)
+        context.update(kategori_butce_verileri)
+        context.update(birikim_hedefi_verileri)
+        context.update(grafik_verileri)
+        context.update(tavsiye_verileri)
+        context["finansal_skor"] = context.get("finansal_saglik_puani", 50) or 50
+
+        return render(request, "home.html", context)
+    except Exception:
+        logger.exception("Dashboard error")
+        raise
 
 
 @login_required
