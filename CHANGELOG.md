@@ -40,6 +40,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - PWA service worker offline cache davranışı yalnızca güvenli GET statik varlıklarını cache'leyecek ve auth/admin/veri sayfalarını cache dışında bırakacak şekilde iyileştirildi.
 - Mobil standalone görünüm ve modern PWA splash/offline ekran stilleri eklendi.
 - Kullanıcıya özel Excel dışa aktarma, JSON yedek indirme ve JSON yedekten geri yükleme sistemi eklendi.
+- Repository temizliği kapsamında Python cache dosyaları Git takibinden çıkarıldı, `.gitignore` kuralları genişletildi ve deploy bağımlılıkları UTF-8 `requirements.txt` formatında düzenlendi.
 
 ### Düzeltildi
 - iPhone standalone PWA girişlerinde eski cache'lenmiş CSRF token'ı nedeniyle oluşabilen 403 hatasını önlemek için auth sayfaları cache dışı bırakıldı, service worker auth/navigasyon cache davranışı güvenli hale getirildi ve Render CSRF/host cookie ayarları güçlendirildi.
