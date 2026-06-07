@@ -78,10 +78,11 @@ def manifest(request):
 
 
 def service_worker(request):
-    cache_name = "finanstakip-pwa-v3"
+    cache_name = "finanstakip-pwa-v4"
     static_assets = [
         "/offline/",
         "/favicon.ico",
+        "/manifest.json",
         static("css/app.css"),
         static("js/app.js"),
         *[static(f"icons/icon-{size}x{size}.png") for size in [72, 96, 128, 144, 152, 192, 384, 512]],
@@ -90,10 +91,40 @@ def service_worker(request):
 const CACHE_NAME = {json.dumps(cache_name)};
 const OFFLINE_URL = "/offline/";
 const STATIC_ASSETS = {json.dumps(static_assets)};
-const AUTH_PATHS = ["/giris/", "/kayit/", "/cikis/"];
+const AUTH_PATHS = ["/giris/", "/kayit/", "/cikis/", "/admin/"];
+const NEVER_CACHE_PATHS = [
+    ...AUTH_PATHS,
+    "/service-worker.js",
+    "/gelir-ekle/",
+    "/gider-ekle/",
+    "/butce-hedefi/",
+    "/kategoriler/",
+    "/tekrarlayan-odemeler/",
+    "/yedekleme/",
+    "/raporlar/",
+];
+const PRECACHE_URLS = new Set(STATIC_ASSETS);
 
-function isAuthRequest(url) {{
-    return AUTH_PATHS.some((path) => url.pathname.startsWith(path));
+function isSameOrigin(url) {{
+    return url.origin === self.location.origin;
+}}
+
+function startsWithAny(url, paths) {{
+    return paths.some((path) => url.pathname.startsWith(path));
+}}
+
+function shouldBypassCache(request, url) {{
+    if (request.method !== "GET") {{
+        return true;
+    }}
+    if (!isSameOrigin(url)) {{
+        return true;
+    }}
+    return startsWithAny(url, NEVER_CACHE_PATHS);
+}}
+
+function isPrecacheAsset(url) {{
+    return PRECACHE_URLS.has(url.pathname);
 }}
 
 self.addEventListener("install", (event) => {{
@@ -115,27 +146,27 @@ self.addEventListener("activate", (event) => {{
 self.addEventListener("fetch", (event) => {{
     const request = event.request;
     const url = new URL(request.url);
-    if (request.method !== "GET") {{
-        return;
-    }}
-
-    if (isAuthRequest(url)) {{
-        event.respondWith(fetch(request));
+    if (shouldBypassCache(request, url)) {{
         return;
     }}
 
     if (request.mode === "navigate") {{
         event.respondWith(
             fetch(request)
-                .catch(() => caches.match(request).then((cached) => cached || caches.match(OFFLINE_URL)))
+                .catch(() => caches.match(OFFLINE_URL))
         );
+        return;
+    }}
+
+    if (!isPrecacheAsset(url)) {{
+        event.respondWith(fetch(request));
         return;
     }}
 
     event.respondWith(
         caches.match(request)
             .then((cached) => cached || fetch(request).then((response) => {{
-                if (response && response.status === 200 && !isAuthRequest(url)) {{
+                if (response && response.status === 200) {{
                     const copy = response.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
                 }}

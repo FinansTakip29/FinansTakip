@@ -37,6 +37,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Android, iOS, iPadOS ve masaüstü Chrome kurulumu için PWA meta etiketleri, kurulum kartı ve localStorage destekli kurulum deneyimi eklendi.
 - FinansTakip PWA ikonları 72, 96, 128, 144, 152, 192, 384 ve 512 piksel boyutlarında oluşturuldu.
 - Service worker içine statik dosya cache'i, offline navigasyon fallback'i ve gelecekteki push notification kullanımı için event altyapısı eklendi.
+- PWA service worker offline cache davranışı yalnızca güvenli GET statik varlıklarını cache'leyecek ve auth/admin/veri sayfalarını cache dışında bırakacak şekilde iyileştirildi.
 - Mobil standalone görünüm ve modern PWA splash/offline ekran stilleri eklendi.
 - Kullanıcıya özel Excel dışa aktarma, JSON yedek indirme ve JSON yedekten geri yükleme sistemi eklendi.
 
