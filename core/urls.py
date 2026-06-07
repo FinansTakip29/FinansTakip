@@ -12,6 +12,7 @@ urlpatterns = [
     path('cikis/', views.cikis, name='cikis'),
     path('', views.home, name='home'),
     path('butce-hedefi/', views.butce_hedefi, name='butce_hedefi'),
+    path('hizli-gider-ekle/', views.hizli_gider_ekle, name='hizli_gider_ekle'),
     path('kategori-butceleri/', views.kategori_butceleri, name='kategori_butceleri'),
     path('kategori-butcesi-duzenle/<int:id>/', views.kategori_butcesi_duzenle, name='kategori_butcesi_duzenle'),
     path('kategori-butcesi-sil/<int:id>/', views.kategori_butcesi_sil, name='kategori_butcesi_sil'),

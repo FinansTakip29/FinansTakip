@@ -658,6 +658,88 @@ label {
     color: var(--app-danger);
 }
 
+.quick-expense-card {
+    border-color: rgba(220, 38, 38, .18);
+    overflow: hidden;
+    position: relative;
+}
+
+.quick-expense-card::after {
+    background: linear-gradient(135deg, rgba(220, 38, 38, .12), rgba(37, 99, 235, .08));
+    content: "";
+    height: 140px;
+    position: absolute;
+    right: -48px;
+    top: -58px;
+    width: 140px;
+}
+
+.quick-expense-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.quick-expense-card-active {
+    border-color: rgba(220, 38, 38, .35);
+    box-shadow: 0 18px 42px rgba(220, 38, 38, .12);
+}
+
+.quick-expense-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.quick-expense-card .hero-kicker {
+    color: var(--app-danger);
+}
+
+.quick-expense-icon {
+    align-items: center;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: var(--app-danger);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 1.25rem;
+    height: 46px;
+    justify-content: center;
+    width: 46px;
+}
+
+.quick-expense-form {
+    align-items: end;
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(150px, .9fr) minmax(170px, 1fr) minmax(180px, 1fr) minmax(180px, 1.2fr) auto;
+}
+
+.quick-expense-form .form-label {
+    font-size: .78rem;
+    font-weight: 850;
+}
+
+.quick-expense-submit {
+    min-height: 48px;
+    white-space: nowrap;
+}
+
+.quick-expense-note {
+    align-items: center;
+    color: var(--app-muted);
+    display: flex;
+    font-size: .86rem;
+    gap: .55rem;
+}
+
+:root[data-theme="dark"] .quick-expense-icon {
+    background: rgba(248, 113, 113, .14);
+    border-color: rgba(248, 113, 113, .32);
+    color: #fca5a5;
+}
+
 .backup-action-grid {
     display: grid;
     gap: 1rem;
@@ -881,6 +963,15 @@ label {
         flex-direction: column;
     }
 
+    .quick-expense-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .quick-expense-submit {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
     .dashboard-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -928,6 +1019,28 @@ label {
 
     .dashboard-hero {
         padding: 1rem;
+    }
+
+    .quick-expense-card {
+        margin-top: -0.25rem;
+    }
+
+    .quick-expense-header {
+        align-items: center;
+    }
+
+    .quick-expense-form {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-expense-form .form-control,
+    .quick-expense-form .form-select,
+    .quick-expense-form .input-group-text {
+        min-height: 52px;
+    }
+
+    .quick-expense-note {
+        align-items: flex-start;
     }
 
     .dashboard-grid,

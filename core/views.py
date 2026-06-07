@@ -75,6 +75,21 @@ def manifest(request):
             }
             for size in icon_sizes
         ],
+        "shortcuts": [
+            {
+                "name": "Hızlı Harcama Ekle",
+                "short_name": "Harcama",
+                "description": "Hızlı gider ekle",
+                "url": "/?quick_add=1",
+                "icons": [
+                    {
+                        "src": static("icons/icon-192x192.png"),
+                        "sizes": "192x192",
+                        "type": "image/png",
+                    }
+                ],
+            }
+        ],
     }
     return JsonResponse(data, content_type="application/manifest+json")
 
@@ -99,6 +114,7 @@ const NEVER_CACHE_PATHS = [
     "/service-worker.js",
     "/gelir-ekle/",
     "/gider-ekle/",
+    "/hizli-gider-ekle/",
     "/butce-hedefi/",
     "/kategori-butceleri/",
     "/kategori-butcesi-",
@@ -1317,6 +1333,11 @@ def home(request):
 
     son_gelirler = Gelir.objects.filter(kullanici=request.user, finans_turu=finans_turu).order_by("-id")[:5]
     son_giderler = Gider.objects.filter(kullanici=request.user, finans_turu=finans_turu).order_by("-id")[:5]
+    hizli_gider_kategorileri = Kategori.objects.filter(
+        kullanici=request.user,
+        finans_turu=finans_turu,
+        tur=Kategori.GIDER,
+    ).order_by("ad")
 
     context = {
         "toplam_gelir": toplam_gelir,
@@ -1324,6 +1345,8 @@ def home(request):
         "bakiye": bakiye,
         "son_gelirler": son_gelirler,
         "son_giderler": son_giderler,
+        "hizli_gider_kategorileri": hizli_gider_kategorileri,
+        "hizli_gider_acik": request.GET.get("quick_add") == "1",
     }
     butce_verileri = _aylik_butce_verileri(request.user, finans_turu)
     odeme_verileri = _tekrarlayan_odeme_verileri(request.user, finans_turu)
@@ -1344,6 +1367,42 @@ def home(request):
     context.update(_finansal_tavsiyeler(grafik_verileri, butce_verileri, odeme_verileri, kategori_butce_verileri))
 
     return render(request, "home.html", context)
+
+
+@login_required
+@never_cache
+def hizli_gider_ekle(request):
+    if request.method != "POST":
+        return redirect("home")
+
+    finans_turu = _secilen_finans_turu(request.POST)
+    tutar = _parse_decimal(request.POST.get("tutar"))
+    kategori = Kategori.objects.filter(
+        id=request.POST.get("kategori"),
+        kullanici=request.user,
+        finans_turu=finans_turu,
+        tur=Kategori.GIDER,
+    ).first()
+    aciklama = (request.POST.get("aciklama") or "").strip()
+
+    if tutar is None or tutar <= 0:
+        messages.error(request, "Hızlı harcama için geçerli bir tutar girin.")
+        return redirect(f"/?finans_turu={finans_turu}&quick_add=1")
+
+    if not kategori:
+        messages.error(request, "Seçilen finans türü için geçerli bir gider kategorisi seçin.")
+        return redirect(f"/?finans_turu={finans_turu}&quick_add=1")
+
+    Gider.objects.create(
+        kullanici=request.user,
+        finans_turu=finans_turu,
+        tarih=timezone.now().date(),
+        aciklama=aciklama or "Hızlı harcama",
+        tutar=tutar,
+        kategori=kategori.ad,
+    )
+    messages.success(request, "Hızlı harcama başarıyla eklendi.")
+    return redirect(f"/?finans_turu={finans_turu}")
 
 
 @login_required

@@ -42,6 +42,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Kullanıcıya özel Excel dışa aktarma, JSON yedek indirme ve JSON yedekten geri yükleme sistemi eklendi.
 - Repository temizliği kapsamında Python cache dosyaları Git takibinden çıkarıldı, `.gitignore` kuralları genişletildi ve deploy bağımlılıkları UTF-8 `requirements.txt` formatında düzenlendi.
 - Kullanıcıya ve finans türüne özel kategori bazlı bütçe hedefleri, birikim hedefleri, hedefe katkı işlemi ve finansal sağlık öneri motoru eklendi.
+- PWA dashboard için hızlı harcama ekleme kartı, `/hizli-gider-ekle/` endpoint'i ve manifest hızlı erişim shortcut'ı eklendi.
 
 ### Düzeltildi
 - Finansal öneriler ve dashboard uyarılarında görünen UTF-8/Türkçe karakter bozulmaları düzeltildi.

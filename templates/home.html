@@ -24,6 +24,66 @@
     </form>
 </section>
 
+<section class="quick-expense-card card p-4 mb-4 {% if hizli_gider_acik %}quick-expense-card-active{% endif %}" id="hizli-harcama">
+    <div class="quick-expense-header">
+        <div>
+            <span class="hero-kicker">PWA Hızlı İşlem</span>
+            <h2 class="section-title mb-1">Hızlı Harcama Ekle</h2>
+            <div class="text-muted small">Telefonda birkaç saniye içinde seçili finans türüne gider kaydı oluştur.</div>
+        </div>
+        <span class="quick-expense-icon"><i class="bi bi-lightning-charge"></i></span>
+    </div>
+
+    {% if hizli_gider_kategorileri %}
+        <form method="POST" action="{% url 'hizli_gider_ekle' %}" class="quick-expense-form mt-3">
+            {% csrf_token %}
+            <div>
+                <label for="hizli_tutar" class="form-label">Tutar</label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text">TL</span>
+                    <input type="number" id="hizli_tutar" name="tutar" class="form-control" min="0.01" step="0.01" inputmode="decimal" placeholder="0,00" required>
+                </div>
+            </div>
+            <div>
+                <label for="hizli_finans_turu" class="form-label">Finans türü</label>
+                <select id="hizli_finans_turu" name="finans_turu" class="form-select form-select-lg" required>
+                    {% for deger, etiket in finans_turleri %}
+                        <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="hizli_kategori" class="form-label">Kategori</label>
+                <select id="hizli_kategori" name="kategori" class="form-select form-select-lg" required>
+                    {% for kategori in hizli_gider_kategorileri %}
+                        <option value="{{ kategori.id }}">{{ kategori.ad }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="hizli_aciklama" class="form-label">Açıklama</label>
+                <input type="text" id="hizli_aciklama" name="aciklama" class="form-control form-control-lg" maxlength="200" placeholder="Opsiyonel">
+            </div>
+            <button type="submit" class="btn btn-danger btn-lg btn-icon quick-expense-submit">
+                <i class="bi bi-plus-circle"></i> Harcamayı Kaydet
+            </button>
+        </form>
+        <div class="quick-expense-note mt-3">
+            <i class="bi bi-shield-check"></i>
+            <span>Tarih otomatik bugünün tarihi olarak kaydedilir. POST istekleri PWA cache dışında tutulur.</span>
+        </div>
+    {% else %}
+        <div class="alert alert-warning mt-3 mb-0 d-flex align-items-start gap-2">
+            <i class="bi bi-exclamation-triangle mt-1"></i>
+            <div>
+                <strong>Önce gider kategorisi oluşturmalısınız.</strong>
+                <div class="small mt-1">Hızlı harcama eklemek için {{ secilen_finans_turu|title }} finans türünde en az bir gider kategorisi gerekir.</div>
+                <a href="/kategoriler/?finans_turu={{ secilen_finans_turu }}" class="btn btn-sm btn-warning mt-3">Kategori Oluştur</a>
+            </div>
+        </div>
+    {% endif %}
+</section>
+
 <section class="dashboard-grid mb-4">
     <div class="card metric-card metric-card-income p-4">
         <div class="metric-card-header">
