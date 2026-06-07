@@ -1,16 +1,19 @@
 from io import BytesIO
 import calendar
+import json
 from decimal import Decimal, InvalidOperation
 from datetime import date, timedelta
 from pathlib import Path
 from xml.sax.saxutils import escape
 
+from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.db.models import Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
+from django.templatetags.static import static
 from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT
@@ -42,6 +45,123 @@ def favicon(request):
     response = HttpResponse(svg, content_type="image/svg+xml")
     response["Cache-Control"] = "public, max-age=86400"
     return response
+
+
+def manifest(request):
+    icon_sizes = [72, 96, 128, 144, 152, 192, 384, 512]
+    data = {
+        "name": settings.PWA_APP_NAME,
+        "short_name": settings.PWA_APP_SHORT_NAME,
+        "description": settings.PWA_APP_DESCRIPTION,
+        "start_url": "/",
+        "scope": "/",
+        "display": settings.PWA_APP_DISPLAY,
+        "orientation": settings.PWA_APP_ORIENTATION,
+        "theme_color": settings.PWA_APP_THEME_COLOR,
+        "background_color": settings.PWA_APP_BACKGROUND_COLOR,
+        "icons": [
+            {
+                "src": static(f"icons/icon-{size}x{size}.png"),
+                "sizes": f"{size}x{size}",
+                "type": "image/png",
+                "purpose": "any maskable",
+            }
+            for size in icon_sizes
+        ],
+    }
+    return JsonResponse(data, content_type="application/manifest+json")
+
+
+def service_worker(request):
+    cache_name = "finanstakip-pwa-v1"
+    static_assets = [
+        "/",
+        "/giris/",
+        "/offline/",
+        "/favicon.ico",
+        static("css/app.css"),
+        static("js/app.js"),
+        *[static(f"icons/icon-{size}x{size}.png") for size in [72, 96, 128, 144, 152, 192, 384, 512]],
+    ]
+    script = f"""
+const CACHE_NAME = {json.dumps(cache_name)};
+const OFFLINE_URL = "/offline/";
+const STATIC_ASSETS = {json.dumps(static_assets)};
+
+self.addEventListener("install", (event) => {{
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then((cache) => cache.addAll(STATIC_ASSETS))
+            .then(() => self.skipWaiting())
+    );
+}});
+
+self.addEventListener("activate", (event) => {{
+    event.waitUntil(
+        caches.keys()
+            .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+            .then(() => self.clients.claim())
+    );
+}});
+
+self.addEventListener("fetch", (event) => {{
+    const request = event.request;
+    if (request.method !== "GET") {{
+        return;
+    }}
+
+    if (request.mode === "navigate") {{
+        event.respondWith(
+            fetch(request)
+                .then((response) => {{
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+                    return response;
+                }})
+                .catch(() => caches.match(request).then((cached) => cached || caches.match(OFFLINE_URL)))
+        );
+        return;
+    }}
+
+    event.respondWith(
+        caches.match(request)
+            .then((cached) => cached || fetch(request).then((response) => {{
+                if (response && response.status === 200) {{
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+                }}
+                return response;
+            }}))
+            .catch(() => caches.match(OFFLINE_URL))
+    );
+}});
+
+self.addEventListener("push", (event) => {{
+    const data = event.data ? event.data.json() : {{}};
+    const title = data.title || "FinansTakip";
+    const options = {{
+        body: data.body || "Yeni finans bildirimi var.",
+        icon: "/static/icons/icon-192x192.png",
+        badge: "/static/icons/icon-96x96.png",
+        data: {{ url: data.url || "/" }}
+    }};
+    event.waitUntil(self.registration.showNotification(title, options));
+}});
+
+self.addEventListener("notificationclick", (event) => {{
+    event.notification.close();
+    const targetUrl = event.notification.data && event.notification.data.url ? event.notification.data.url : "/";
+    event.waitUntil(clients.openWindow(targetUrl));
+}});
+"""
+    response = HttpResponse(script, content_type="application/javascript")
+    response["Service-Worker-Allowed"] = "/"
+    response["Cache-Control"] = "no-cache"
+    return response
+
+
+def offline(request):
+    return render(request, "offline.html")
 
 
 def _secilen_finans_turu(veri):

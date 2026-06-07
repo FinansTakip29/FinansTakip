@@ -219,3 +219,11 @@ if not DEBUG:
 LOGIN_URL = 'giris'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'giris'
+
+PWA_APP_NAME = 'FinansTakip'
+PWA_APP_SHORT_NAME = 'FinansTakip'
+PWA_APP_DESCRIPTION = 'Gelir, gider, butce ve odemelerini takip et.'
+PWA_APP_THEME_COLOR = '#4f46e5'
+PWA_APP_BACKGROUND_COLOR = '#ffffff'
+PWA_APP_DISPLAY = 'standalone'
+PWA_APP_ORIENTATION = 'portrait'

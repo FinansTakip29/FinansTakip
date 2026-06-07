@@ -42,12 +42,76 @@ body {
     letter-spacing: 0;
 }
 
+body:has(.app-splash:not(.app-splash-hidden)) {
+    overflow: hidden;
+}
+
 a {
     color: var(--app-primary-dark);
 }
 
 .app-shell {
     min-height: 100vh;
+}
+
+.app-splash {
+    align-items: center;
+    background: var(--app-hero);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    inset: 0;
+    justify-content: center;
+    position: fixed;
+    transition: opacity .35s ease, visibility .35s ease;
+    z-index: 2000;
+}
+
+.app-splash-hidden {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.app-splash-mark,
+.offline-icon,
+.pwa-install-icon {
+    align-items: center;
+    background: rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .24);
+    border-radius: 8px;
+    display: inline-flex;
+    height: 64px;
+    justify-content: center;
+    width: 64px;
+}
+
+.app-splash-mark i,
+.offline-icon i,
+.pwa-install-icon i {
+    font-size: 1.8rem;
+}
+
+.app-splash-loader {
+    animation: splashPulse 1s ease-in-out infinite;
+    background: rgba(255, 255, 255, .85);
+    border-radius: 999px;
+    height: 4px;
+    overflow: hidden;
+    width: 128px;
+}
+
+@keyframes splashPulse {
+    0%, 100% {
+        opacity: .38;
+        transform: scaleX(.72);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scaleX(1);
+    }
 }
 
 .sidebar {
@@ -637,6 +701,90 @@ label {
     border-left-color: var(--app-success);
 }
 
+.pwa-install-card {
+    align-items: center;
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: 8px;
+    bottom: 1rem;
+    box-shadow: var(--app-shadow);
+    color: var(--app-text);
+    display: grid;
+    gap: .9rem;
+    grid-template-columns: auto 1fr auto;
+    left: 50%;
+    max-width: min(720px, calc(100vw - 2rem));
+    padding: 1rem;
+    position: fixed;
+    transform: translateX(-50%);
+    width: 100%;
+    z-index: 1080;
+}
+
+.pwa-install-card[hidden] {
+    display: none;
+}
+
+.pwa-install-card p {
+    color: var(--app-muted);
+    margin: .15rem 0 0;
+}
+
+.pwa-install-icon {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #4f46e5;
+    height: 48px;
+    width: 48px;
+}
+
+.pwa-install-actions {
+    display: flex;
+    gap: .5rem;
+}
+
+.offline-shell {
+    align-items: center;
+    background: var(--app-bg);
+    display: flex;
+    min-height: 100vh;
+    padding: 1.25rem;
+}
+
+.offline-card {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: 8px;
+    box-shadow: var(--app-shadow);
+    margin: auto;
+    max-width: 520px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.offline-card h1 {
+    font-size: 1.8rem;
+    font-weight: 850;
+    margin: 1rem 0 .5rem;
+}
+
+.offline-card p {
+    color: var(--app-muted);
+}
+
+.offline-logo {
+    border-radius: 8px;
+    box-shadow: var(--app-shadow-soft);
+    height: 88px;
+    width: 88px;
+}
+
+.offline-icon {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #4f46e5;
+}
+
 :root[data-theme="dark"] .app-chip-primary,
 :root[data-theme="dark"] .health-score {
     background: rgba(96, 165, 250, .12);
@@ -750,6 +898,26 @@ label {
     .notification-item {
         display: flex;
         flex-direction: column;
+    }
+
+    .pwa-install-card {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+    }
+
+    .pwa-install-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (display-mode: standalone) {
+    .mobile-navbar {
+        padding-top: max(.75rem, env(safe-area-inset-top));
+    }
+
+    .page-content {
+        padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
     }
 }
 

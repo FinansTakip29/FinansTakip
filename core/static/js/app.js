@@ -1,8 +1,84 @@
 (function () {
     const storageKey = "finanstakip-theme";
+    const installStorageKey = "finanstakip-install-dismissed";
     const root = document.documentElement;
     const toggleButton = document.querySelector("[data-theme-toggle]");
+    const splash = document.querySelector("[data-app-splash]");
+    const installCard = document.querySelector("[data-pwa-install-card]");
+    const installButton = document.querySelector("[data-pwa-install]");
+    const dismissButton = document.querySelector("[data-pwa-dismiss]");
+    const installCopy = document.querySelector("[data-pwa-install-copy]");
+    let deferredInstallPrompt = null;
     let dashboardCharts = [];
+
+    window.addEventListener("load", function () {
+        if (splash) {
+            splash.classList.add("app-splash-hidden");
+        }
+    });
+
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js", { scope: "/" }).catch(function () {
+                // PWA kaydı desteklenmeyen ortamlarda sessizce geçilir.
+            });
+        });
+    }
+
+    function isStandalone() {
+        return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    }
+
+    function isIosSafari() {
+        const ua = window.navigator.userAgent.toLowerCase();
+        return /iphone|ipad|ipod/.test(ua) && /safari/.test(ua) && !/crios|fxios|edgios/.test(ua);
+    }
+
+    function showInstallCard(copy) {
+        if (!installCard || isStandalone() || localStorage.getItem(installStorageKey) === "1") {
+            return;
+        }
+        if (installCopy && copy) {
+            installCopy.textContent = copy;
+        }
+        installCard.hidden = false;
+    }
+
+    window.addEventListener("beforeinstallprompt", function (event) {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        showInstallCard("Uygulamayı ana ekranına ekleyip tam ekran kullan.");
+    });
+
+    if (isIosSafari()) {
+        showInstallCard("Safari paylaş menüsünden Ana Ekrana Ekle seçeneğini kullan.");
+        if (installButton) {
+            installButton.hidden = true;
+        }
+    }
+
+    if (installButton) {
+        installButton.addEventListener("click", async function () {
+            if (!deferredInstallPrompt) {
+                return;
+            }
+            deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+            if (installCard) {
+                installCard.hidden = true;
+            }
+        });
+    }
+
+    if (dismissButton) {
+        dismissButton.addEventListener("click", function () {
+            localStorage.setItem(installStorageKey, "1");
+            if (installCard) {
+                installCard.hidden = true;
+            }
+        });
+    }
 
     function applyTheme(theme) {
         root.dataset.theme = theme;

@@ -33,6 +33,11 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Tüm sayfalarda çalışan localStorage destekli light/dark tema değiştirme özelliği eklendi.
 - Dashboard bildirim merkezi ile yaklaşan ödemeler, geciken ödemeler ve kritik bütçe uyarıları tek alanda gösterildi.
 - Responsive kart, grafik, bildirim ve hızlı işlem düzenleri mobil ve masaüstü için iyileştirildi.
+- Manuel PWA altyapısı, manifest endpoint'i, root scope service worker ve offline fallback sayfası eklendi.
+- Android, iOS, iPadOS ve masaüstü Chrome kurulumu için PWA meta etiketleri, kurulum kartı ve localStorage destekli kurulum deneyimi eklendi.
+- FinansTakip PWA ikonları 72, 96, 128, 144, 152, 192, 384 ve 512 piksel boyutlarında oluşturuldu.
+- Service worker içine statik dosya cache'i, offline navigasyon fallback'i ve gelecekteki push notification kullanımı için event altyapısı eklendi.
+- Mobil standalone görünüm ve modern PWA splash/offline ekran stilleri eklendi.
 
 ### Düzeltildi
 - Raporlar sayfasında grafik scriptlerinin `scripts` bloğu dışında kalması nedeniyle oluşan `TemplateSyntaxError` hatası düzeltildi.

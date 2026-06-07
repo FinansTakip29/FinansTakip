@@ -3,6 +3,9 @@ from . import views
 
 urlpatterns = [
     path('favicon.ico', views.favicon, name='favicon'),
+    path('manifest.json', views.manifest, name='manifest'),
+    path('service-worker.js', views.service_worker, name='service_worker'),
+    path('offline/', views.offline, name='offline'),
     path('health/', views.health, name='health'),
     path('kayit/', views.kayit, name='kayit'),
     path('giris/', views.giris, name='giris'),

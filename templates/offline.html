@@ -1,0 +1,21 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4f46e5">
+    <title>Çevrimdışı | FinansTakip</title>
+    <link href="{% static 'css/app.css' %}" rel="stylesheet">
+</head>
+<body>
+    <main class="offline-shell">
+        <section class="offline-card">
+            <img class="offline-logo" src="{% static 'icons/icon-192x192.png' %}" alt="FinansTakip">
+            <h1>Çevrimdışı Mod</h1>
+            <p>İnternet bağlantısı yokken FinansTakip'in temel görünümü ve statik dosyaları cache'den çalışır. Verilerini güncellemek için yeniden bağlandığında sayfayı yenile.</p>
+            <a class="btn btn-primary btn-icon" href="/"><i class="bi bi-arrow-clockwise"></i>Tekrar Dene</a>
+        </section>
+    </main>
+</body>
+</html>
