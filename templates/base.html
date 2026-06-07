@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -9,255 +10,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --app-sidebar: #111827;
-            --app-sidebar-soft: #1f2937;
-            --app-bg: #f3f6fb;
-            --app-border: #e5e7eb;
-            --app-text: #111827;
-            --app-muted: #64748b;
-        }
-
-        body {
-            background: var(--app-bg);
-            color: var(--app-text);
-            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            letter-spacing: 0;
-        }
-
-        .app-shell {
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            background: var(--app-sidebar);
-            color: #fff;
-            min-height: 100vh;
-            padding: 1.25rem;
-            position: fixed;
-            width: 280px;
-        }
-
-        .sidebar-brand {
-            align-items: center;
-            display: flex;
-            gap: .75rem;
-            margin-bottom: 1.4rem;
-        }
-
-        .brand-mark {
-            align-items: center;
-            background: #2563eb;
-            border-radius: 8px;
-            display: inline-flex;
-            font-size: 1.2rem;
-            height: 42px;
-            justify-content: center;
-            width: 42px;
-        }
-
-        .sidebar .nav-link {
-            align-items: center;
-            border-radius: 8px;
-            color: #cbd5e1;
-            display: flex;
-            font-weight: 600;
-            gap: .75rem;
-            padding: .72rem .85rem;
-        }
-
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link:focus {
-            background: var(--app-sidebar-soft);
-            color: #fff;
-        }
-
-        .sidebar .nav-link i {
-            font-size: 1.05rem;
-            width: 1.25rem;
-        }
-
-        .content-wrap {
-            margin-left: 280px;
-            min-height: 100vh;
-        }
-
-        .topbar {
-            align-items: center;
-            background: rgba(255, 255, 255, .94);
-            border-bottom: 1px solid var(--app-border);
-            display: flex;
-            justify-content: space-between;
-            padding: 1rem 1.5rem;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .page-content {
-            padding: 1.5rem;
-        }
-
-        .page-title {
-            font-size: 1.45rem;
-            font-weight: 800;
-            margin: 0;
-        }
-
-        .page-subtitle {
-            color: var(--app-muted);
-            font-size: .92rem;
-            margin: .2rem 0 0;
-        }
-
-        .card {
-            border: 1px solid var(--app-border);
-            border-radius: 8px;
-            box-shadow: 0 10px 28px rgba(15, 23, 42, .06);
-        }
-
-        .metric-card {
-            min-height: 132px;
-        }
-
-        .metric-icon {
-            align-items: center;
-            border-radius: 8px;
-            display: inline-flex;
-            font-size: 1.25rem;
-            height: 44px;
-            justify-content: center;
-            width: 44px;
-        }
-
-        .section-title {
-            font-size: 1rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-        }
-
-        .table {
-            margin-bottom: 0;
-        }
-
-        .table thead th {
-            background: #f8fafc;
-            color: #475569;
-            font-size: .78rem;
-            font-weight: 800;
-            letter-spacing: 0;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
-
-        .table td {
-            vertical-align: middle;
-        }
-
-        .form-label,
-        label {
-            color: #374151;
-            font-weight: 700;
-            margin-bottom: .35rem;
-        }
-
-        .form-control,
-        .form-select {
-            border-radius: 8px;
-        }
-
-        .btn {
-            border-radius: 8px;
-            font-weight: 700;
-        }
-
-        .btn-icon {
-            align-items: center;
-            display: inline-flex;
-            gap: .4rem;
-        }
-
-        .auth-shell {
-            align-items: center;
-            display: flex;
-            min-height: 100vh;
-            padding: 1.5rem;
-        }
-
-        .auth-card {
-            margin: auto;
-            max-width: 460px;
-            width: 100%;
-        }
-
-        .empty-state {
-            color: var(--app-muted);
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .chart-box {
-            height: 320px;
-            margin: 0 auto;
-            max-width: 680px;
-        }
-
-        @media (max-width: 991.98px) {
-            .sidebar {
-                min-height: auto;
-                position: static;
-                width: 100%;
-            }
-
-            .sidebar .nav {
-                flex-direction: row;
-                overflow-x: auto;
-                padding-bottom: .5rem;
-                white-space: nowrap;
-            }
-
-            .content-wrap {
-                margin-left: 0;
-            }
-
-            .topbar {
-                align-items: flex-start;
-                flex-direction: column;
-                gap: .75rem;
-            }
-        }
-
-        @media print {
-            .sidebar,
-            .topbar,
-            .btn,
-            form {
-                display: none !important;
-            }
-
-            .content-wrap {
-                margin-left: 0;
-            }
-
-            body,
-            .card {
-                background: #fff !important;
-                box-shadow: none !important;
-            }
-        }
-    </style>
+    <link href="{% static 'css/app.css' %}" rel="stylesheet">
     {% block head %}{% endblock %}
 </head>
 <body>
 {% if request.user.is_authenticated %}
     <div class="app-shell">
-        <aside class="sidebar">
+        <aside class="sidebar d-none d-lg-flex">
             <div class="sidebar-brand">
                 <span class="brand-mark"><i class="bi bi-wallet2"></i></span>
                 <div>
-                    <div class="fw-bold fs-5">FinansTakip</div>
-                    <div class="text-white-50 small">Bütçe yönetimi</div>
+                    <div class="brand-title">FinansTakip</div>
+                    <div class="brand-subtitle">Bütçe yönetimi</div>
                 </div>
             </div>
 
@@ -270,9 +34,42 @@
                 <a class="nav-link" href="/tekrarlayan-odemeler/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-repeat"></i>Tekrarlayan Ödemeler</a>
                 <a class="nav-link" href="/raporlar/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-bar-chart"></i>Raporlar</a>
                 <a class="nav-link" href="/raporlar/pdf/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-file-earmark-pdf"></i>PDF Rapor</a>
-                <a class="nav-link" href="/cikis/"><i class="bi bi-box-arrow-right"></i>Çıkış</a>
+                <a class="nav-link mt-auto" href="/cikis/"><i class="bi bi-box-arrow-right"></i>Çıkış</a>
             </nav>
         </aside>
+
+        <nav class="mobile-navbar d-lg-none">
+            <div class="d-flex align-items-center gap-2">
+                <span class="brand-mark brand-mark-sm"><i class="bi bi-wallet2"></i></span>
+                <span class="fw-bold">FinansTakip</span>
+            </div>
+            <button class="btn btn-light btn-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu" aria-label="Menüyü aç">
+                <i class="bi bi-list"></i>
+            </button>
+        </nav>
+
+        <div class="offcanvas offcanvas-start app-offcanvas d-lg-none" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+            <div class="offcanvas-header">
+                <div class="d-flex align-items-center gap-2" id="mobileMenuLabel">
+                    <span class="brand-mark brand-mark-sm"><i class="bi bi-wallet2"></i></span>
+                    <span class="fw-bold">FinansTakip</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+            </div>
+            <div class="offcanvas-body">
+                <nav class="nav flex-column gap-1">
+                    <a class="nav-link" href="/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+                    <a class="nav-link" href="/gelir-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-down-circle"></i>Gelirler</a>
+                    <a class="nav-link" href="/gider-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-up-circle"></i>Giderler</a>
+                    <a class="nav-link" href="/kategoriler/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-tags"></i>Kategoriler</a>
+                    <a class="nav-link" href="/butce-hedefi/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-bullseye"></i>Bütçe Hedefleri</a>
+                    <a class="nav-link" href="/tekrarlayan-odemeler/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-repeat"></i>Tekrarlayan Ödemeler</a>
+                    <a class="nav-link" href="/raporlar/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-bar-chart"></i>Raporlar</a>
+                    <a class="nav-link" href="/raporlar/pdf/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-file-earmark-pdf"></i>PDF Rapor</a>
+                    <a class="nav-link" href="/cikis/"><i class="bi bi-box-arrow-right"></i>Çıkış</a>
+                </nav>
+            </div>
+        </div>
 
         <main class="content-wrap">
             <header class="topbar">
@@ -280,12 +77,12 @@
                     <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
                     <p class="page-subtitle">{% block page_subtitle %}Finansal durumunu tek ekrandan takip et.{% endblock %}</p>
                 </div>
-                <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="topbar-actions">
                     {% if secilen_finans_turu %}
-                        <span class="badge text-bg-primary rounded-pill px-3 py-2">{{ secilen_finans_turu }}</span>
+                        <span class="app-chip app-chip-primary">{{ secilen_finans_turu }}</span>
                     {% endif %}
-                    <span class="badge text-bg-light border rounded-pill px-3 py-2">
-                        <i class="bi bi-person-circle me-1"></i>{{ request.user.username }}
+                    <span class="app-chip">
+                        <i class="bi bi-person-circle"></i>{{ request.user.username }}
                     </span>
                 </div>
             </header>

@@ -6,28 +6,28 @@
 <div class="card auth-card p-4">
     <div class="text-center mb-4">
         <span class="metric-icon bg-primary text-white mb-3"><i class="bi bi-wallet2"></i></span>
-        <h1 class="h3 fw-bold mb-1">Giriş Yap</h1>
-        <p class="text-muted mb-0">FinansTakip hesabına eriş.</p>
+        <h1 class="h3 fw-bold mb-1">FinansTakip</h1>
+        <p class="text-muted mb-0">Bütçeni, ödemelerini ve raporlarını güvenle yönet.</p>
     </div>
 
     <form method="POST" class="d-grid gap-3">
         {% csrf_token %}
         {% if form.errors %}
-            <div class="alert alert-danger">Kullanıcı adı veya şifre hatalı.</div>
+            <div class="alert alert-danger mb-0">Kullanıcı adı veya şifre hatalı.</div>
         {% endif %}
         <div>
             <label class="form-label">Kullanıcı Adı</label>
-            <input type="text" name="username" class="form-control" value="{{ form.username.value|default:'' }}" required>
+            <input type="text" name="username" class="form-control" value="{{ form.username.value|default:'' }}" autocomplete="username" required>
         </div>
         <div>
             <label class="form-label">Şifre</label>
-            <input type="password" name="password" class="form-control" required>
+            <input type="password" name="password" class="form-control" autocomplete="current-password" required>
         </div>
         <button class="btn btn-primary w-100 btn-icon justify-content-center"><i class="bi bi-box-arrow-in-right"></i>Giriş Yap</button>
     </form>
 
-    <p class="text-center mt-3 mb-0">
-        Hesabın yok mu? <a href="/kayit/">Kayıt Ol</a>
+    <p class="text-center mt-3 mb-0 text-muted">
+        Hesabın yok mu? <a class="fw-bold text-decoration-none" href="/kayit/">Kayıt Ol</a>
     </p>
 </div>
 {% endblock %}

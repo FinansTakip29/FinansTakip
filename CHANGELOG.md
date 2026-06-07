@@ -27,6 +27,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Render dış ağ kontrolü için `health/` endpoint'i eklendi ve host/CSRF environment değerleri şema, boşluk ve son slash hatalarına karşı normalize edildi.
 - Tarayıcı konsolundaki `favicon.ico` 404 hatasını gidermek için cache'lenebilir favicon endpoint'i eklendi.
 - Sentry SDK entegrasyonu ve Render ortamında `SENTRY_DSN` ile hata izleme desteği eklendi.
+- Creative Production yaklaşımıyla mobil hamburger menü, modern sidebar, ortak CSS tasarım sistemi, profesyonel auth ekranları, kart, form, tablo ve grafik görünümü iyileştirildi.
 
 ### Düzeltildi
 - Tekrarlayan ödeme tablosunda eksik kalan `tekrar_turu` ve `tekrar_araligi` kolonlarını veri silmeden ekleyen migration düzeltmesi eklendi.
