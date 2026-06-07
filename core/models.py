@@ -50,6 +50,36 @@ class ButceHedefi(models.Model):
         return f"{self.kullanici.username} - {self.ay}/{self.yil}: {self.hedef_tutar} TL"
 
 
+class KategoriButcesi(models.Model):
+    kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    finans_turu = models.CharField(max_length=20, choices=FINANS_TURU_SECENEKLERI, default=FINANS_KISISEL)
+    kategori = models.ForeignKey("Kategori", on_delete=models.CASCADE)
+    yil = models.PositiveIntegerField()
+    ay = models.PositiveSmallIntegerField()
+    hedef_tutar = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        unique_together = ("kullanici", "finans_turu", "kategori", "yil", "ay")
+
+    def __str__(self):
+        return f"{self.kategori.ad} - {self.ay}/{self.yil}: {self.hedef_tutar} TL"
+
+
+class BirikimHedefi(models.Model):
+    kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    finans_turu = models.CharField(max_length=20, choices=FINANS_TURU_SECENEKLERI, default=FINANS_KISISEL)
+    hedef_adi = models.CharField(max_length=120)
+    hedef_tutar = models.DecimalField(max_digits=12, decimal_places=2)
+    mevcut_tutar = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    aylik_katki = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    hedef_tarihi = models.DateField(null=True, blank=True)
+    aktif = models.BooleanField(default=True)
+    aciklama = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.hedef_adi} - {self.mevcut_tutar}/{self.hedef_tutar} TL"
+
+
 class Kategori(models.Model):
     GELIR = "gelir"
     GIDER = "gider"

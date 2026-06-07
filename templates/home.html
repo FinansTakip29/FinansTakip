@@ -115,8 +115,8 @@
             <div class="quick-actions">
                 <a href="/gelir-ekle/?finans_turu={{ secilen_finans_turu }}" class="quick-action quick-action-success"><i class="bi bi-plus-circle"></i><span>Gelir Ekle</span></a>
                 <a href="/gider-ekle/?finans_turu={{ secilen_finans_turu }}" class="quick-action quick-action-danger"><i class="bi bi-dash-circle"></i><span>Gider Ekle</span></a>
-                <a href="/kategoriler/?finans_turu={{ secilen_finans_turu }}" class="quick-action"><i class="bi bi-tags"></i><span>Kategoriler</span></a>
-                <a href="/tekrarlayan-odemeler/?finans_turu={{ secilen_finans_turu }}" class="quick-action"><i class="bi bi-repeat"></i><span>Ödemeler</span></a>
+                <a href="/kategori-butceleri/?finans_turu={{ secilen_finans_turu }}" class="quick-action"><i class="bi bi-diagram-3"></i><span>Kategori Bütçeleri</span></a>
+                <a href="/birikim-hedefleri/?finans_turu={{ secilen_finans_turu }}" class="quick-action"><i class="bi bi-piggy-bank"></i><span>Birikim</span></a>
             </div>
         </div>
     </div>
@@ -216,6 +216,13 @@
                     </div>
                 {% endif %}
 
+                {% for uyari in kategori_butce_uyarilari %}
+                    <div class="notification-item notification-danger">
+                        <i class="bi bi-diagram-3"></i>
+                        <div><strong>Kategori bütçesi</strong><span>{{ uyari }}</span></div>
+                    </div>
+                {% endfor %}
+
                 {% for kayit in geciken_odemeler %}
                     <div class="notification-item notification-danger">
                         <i class="bi bi-clock-history"></i>
@@ -232,7 +239,7 @@
                     </div>
                 {% endfor %}
 
-                {% if not yaklasan_odemeler and not geciken_odemeler and not butce_uyari %}
+                {% if not yaklasan_odemeler and not geciken_odemeler and not butce_uyari and not kategori_butce_uyarilari %}
                     <div class="notification-item notification-success">
                         <i class="bi bi-check2-circle"></i>
                         <div><strong>Her şey yolunda</strong><span>Kritik bütçe veya ödeme uyarısı bulunmuyor.</span></div>
@@ -240,6 +247,91 @@
                 {% endif %}
             </div>
         </div>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-xl-6">
+        <div class="card p-4 h-100">
+            <div class="card-toolbar mb-3">
+                <div>
+                    <h2 class="section-title mb-1">Kategori Bazlı Bütçeler</h2>
+                    <div class="text-muted small">{{ butce_ay }}/{{ butce_yil }} dönemi</div>
+                </div>
+                <a href="/kategori-butceleri/?finans_turu={{ secilen_finans_turu }}" class="btn btn-outline-primary btn-sm btn-icon">
+                    <i class="bi bi-pencil-square"></i>Yönet
+                </a>
+            </div>
+            <div class="d-grid gap-3">
+                {% for kayit in kategori_butce_kayitlari %}
+                    <div>
+                        <div class="d-flex justify-content-between gap-2 flex-wrap mb-1">
+                            <strong>{{ kayit.butce.kategori.ad }}</strong>
+                            <span class="text-muted small">{{ kayit.harcanan }} / {{ kayit.butce.hedef_tutar }} TL</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-{{ kayit.renk }}" style="width: {{ kayit.progress_orani }}%">%{{ kayit.oran }}</div>
+                        </div>
+                        {% if kayit.renk == "danger" %}
+                            <div class="text-danger small fw-semibold mt-1">{{ kayit.butce.kategori.ad }} bütçesi aşıldı.</div>
+                        {% elif kayit.renk == "warning" %}
+                            <div class="text-warning small fw-semibold mt-1">{{ kayit.butce.kategori.ad }} bütçesinin %80'i aşıldı.</div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <div class="empty-state">Bu ay için kategori bütçesi yok.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card p-4 h-100">
+            <div class="card-toolbar mb-3">
+                <div>
+                    <h2 class="section-title mb-1">Birikim Hedefleri</h2>
+                    <div class="text-muted small">Aktif hedeflerde tamamlanma durumu</div>
+                </div>
+                <a href="/birikim-hedefleri/?finans_turu={{ secilen_finans_turu }}" class="btn btn-outline-primary btn-sm btn-icon">
+                    <i class="bi bi-piggy-bank"></i>Yönet
+                </a>
+            </div>
+            <div class="d-grid gap-3">
+                {% for kayit in birikim_hedefi_kayitlari|slice:":4" %}
+                    <div>
+                        <div class="d-flex justify-content-between gap-2 flex-wrap mb-1">
+                            <strong>{{ kayit.hedef.hedef_adi }}</strong>
+                            <span class="text-muted small">Kalan {{ kayit.kalan }} TL</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" style="width: {{ kayit.progress_orani }}%">%{{ kayit.oran }}</div>
+                        </div>
+                        {% if kayit.tahmini_ay %}
+                            <div class="text-muted small mt-1">Aylık katkıyla tahmini {{ kayit.tahmini_ay }} ay.</div>
+                        {% endif %}
+                    </div>
+                {% empty %}
+                    <div class="empty-state">Aktif birikim hedefi yok.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card p-4 mb-4">
+    <div class="card-toolbar mb-3">
+        <div>
+            <h2 class="section-title mb-1">Finansal Öneriler</h2>
+            <div class="text-muted small">Skor durumu: {{ finansal_saglik_durumu.etiket }}</div>
+        </div>
+        <span class="badge text-bg-{{ finansal_saglik_durumu.renk }} rounded-pill px-3 py-2">{{ finansal_saglik_puani }}/100</span>
+    </div>
+    <div class="notification-stack">
+        {% for tavsiye in finansal_tavsiyeler %}
+            <div class="notification-item notification-{{ finansal_saglik_durumu.renk }}">
+                <i class="bi bi-lightbulb"></i>
+                <div><strong>Öneri</strong><span>{{ tavsiye }}</span></div>
+            </div>
+        {% endfor %}
     </div>
 </section>
 

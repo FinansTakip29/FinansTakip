@@ -691,6 +691,19 @@ label {
     font-size: .9rem;
 }
 
+.savings-card {
+    background: var(--app-surface-soft);
+    border: 1px solid var(--app-border);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.savings-card h3 {
+    font-size: 1rem;
+    font-weight: 850;
+    margin: 0 0 .25rem;
+}
+
 .notification-stack {
     display: grid;
     gap: .75rem;

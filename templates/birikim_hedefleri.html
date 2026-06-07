@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Birikim Hedefleri | FinansTakip{% endblock %}
+{% block page_title %}Birikim Hedefleri{% endblock %}
+{% block page_subtitle %}Telefon, tatil, acil durum fonu gibi hedeflerini takip et.{% endblock %}
+
+{% block content %}
+{% if hata %}
+    <div class="alert alert-danger">{{ hata }}</div>
+{% endif %}
+
+<div class="row g-4">
+    <div class="col-xl-4">
+        <div class="card p-4">
+            <h2 class="section-title">Hedef Oluştur</h2>
+            <form method="POST" class="d-grid gap-3">
+                {% csrf_token %}
+                <div>
+                    <label class="form-label">Finans Türü</label>
+                    <select name="finans_turu" class="form-select" required>
+                        {% for deger, etiket in finans_turleri %}
+                            <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Hedef Adı</label>
+                    <input type="text" name="hedef_adi" class="form-control" placeholder="Tatil Fonu" required>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">Hedef Tutar</label>
+                        <input type="number" step="0.01" min="0.01" name="hedef_tutar" class="form-control" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Mevcut Tutar</label>
+                        <input type="number" step="0.01" min="0" name="mevcut_tutar" class="form-control" value="0">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label">Aylık Katkı</label>
+                        <input type="number" step="0.01" min="0" name="aylik_katki" class="form-control" value="0">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Hedef Tarihi</label>
+                        <input type="date" name="hedef_tarihi" class="form-control">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">Açıklama</label>
+                    <textarea name="aciklama" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="aktif" id="aktif" checked>
+                    <label class="form-check-label" for="aktif">Aktif</label>
+                </div>
+                <button class="btn btn-primary btn-icon"><i class="bi bi-plus-circle"></i>Hedef Ekle</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-xl-8">
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h2 class="section-title mb-0">Hedefler</h2>
+                <form method="GET" class="d-flex gap-2 flex-wrap">
+                    <select name="finans_turu" class="form-select form-select-sm">
+                        {% for deger, etiket in finans_turleri %}
+                            <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-secondary btn-sm btn-icon"><i class="bi bi-funnel"></i>Filtrele</button>
+                </form>
+            </div>
+
+            <div class="d-grid gap-3">
+                {% for kayit in hedef_kayitlari %}
+                    <div class="savings-card">
+                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                            <div>
+                                <h3>{{ kayit.hedef.hedef_adi }}</h3>
+                                <div class="text-muted small">
+                                    Kalan: {{ kayit.kalan }} TL
+                                    {% if kayit.tahmini_ay %} · Tahmini {{ kayit.tahmini_ay }} ay{% endif %}
+                                </div>
+                            </div>
+                            <span class="badge text-bg-primary rounded-pill">%{{ kayit.oran }}</span>
+                        </div>
+                        <div class="progress my-3">
+                            <div class="progress-bar bg-success" style="width: {{ kayit.progress_orani }}%">%{{ kayit.oran }}</div>
+                        </div>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-5">
+                                <div class="small text-muted">Mevcut / Hedef</div>
+                                <strong>{{ kayit.hedef.mevcut_tutar }} / {{ kayit.hedef.hedef_tutar }} TL</strong>
+                            </div>
+                            <div class="col-md-7">
+                                <form method="POST" action="/birikim-hedefi-katki/{{ kayit.hedef.id }}/" class="d-flex gap-2 flex-wrap justify-content-md-end">
+                                    {% csrf_token %}
+                                    <input type="number" step="0.01" min="0.01" name="katki_tutar" class="form-control form-control-sm" placeholder="Katkı tutarı" required>
+                                    <button class="btn btn-success btn-sm btn-icon"><i class="bi bi-plus-lg"></i>Katkı</button>
+                                    <a href="/birikim-hedefi-duzenle/{{ kayit.hedef.id }}/" class="btn btn-outline-warning btn-sm" title="Düzenle"><i class="bi bi-pencil-square"></i></a>
+                                    <a href="/birikim-hedefi-sil/{{ kayit.hedef.id }}/" class="btn btn-outline-danger btn-sm" title="Sil"><i class="bi bi-trash"></i></a>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="empty-state">Aktif birikim hedefi yok.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
