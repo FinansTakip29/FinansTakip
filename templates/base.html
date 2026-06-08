@@ -40,6 +40,7 @@
 
             <nav class="nav flex-column gap-1">
                 <a class="nav-link" href="/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+                <a class="nav-link" href="/finans-alanlari/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-collection"></i>Finans Alanları</a>
                 <a class="nav-link" href="/gelir-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-down-circle"></i>Gelirler</a>
                 <a class="nav-link" href="/gider-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-up-circle"></i>Giderler</a>
                 <a class="nav-link" href="/kategoriler/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-tags"></i>Kategoriler</a>
@@ -75,6 +76,7 @@
             <div class="offcanvas-body">
                 <nav class="nav flex-column gap-1">
                     <a class="nav-link" href="/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+                    <a class="nav-link" href="/finans-alanlari/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-collection"></i>Finans Alanları</a>
                     <a class="nav-link" href="/gelir-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-down-circle"></i>Gelirler</a>
                     <a class="nav-link" href="/gider-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-up-circle"></i>Giderler</a>
                     <a class="nav-link" href="/kategoriler/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-tags"></i>Kategoriler</a>
@@ -100,8 +102,8 @@
                     <button class="theme-toggle app-chip" type="button" data-theme-toggle aria-label="Temayı değiştir">
                         <i class="bi bi-moon-stars"></i><span>Tema</span>
                     </button>
-                    {% if secilen_finans_turu %}
-                        <span class="app-chip app-chip-primary">{{ secilen_finans_turu }}</span>
+                    {% if secilen_finans_alani %}
+                        <span class="app-chip app-chip-primary">{{ secilen_finans_alani.ad }}</span>
                     {% endif %}
                     <span class="app-chip">
                         <i class="bi bi-person-circle"></i>{{ request.user.username }}

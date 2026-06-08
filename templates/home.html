@@ -2,17 +2,17 @@
 
 {% block title %}Dashboard | FinansTakip{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
-{% block page_subtitle %}Gelir, gider, bütçe ve ödeme durumunu seçili finans türüne göre izle.{% endblock %}
+{% block page_subtitle %}Gelir, gider, bütçe ve ödeme durumunu seçili finans alanına göre izle.{% endblock %}
 
 {% block content %}
 <section class="dashboard-hero mb-4">
     <div>
         <span class="hero-kicker">Finans Özeti</span>
-        <h2 class="hero-title">{{ secilen_finans_turu|title }} finans görünümü</h2>
+        <h2 class="hero-title">{{ secilen_finans_alani.ad|default:"Finans" }} görünümü</h2>
         <p class="hero-copy">Bu ayki nakit akışı, bütçe sağlığı ve ödeme risklerini tek ekrandan takip et.</p>
     </div>
     <form method="GET" class="hero-filter">
-        <label for="finans_turu" class="form-label">Finans Türü</label>
+        <label for="finans_turu" class="form-label">Finans Alanı</label>
         <div class="d-flex gap-2 flex-wrap">
             <select id="finans_turu" name="finans_turu" class="form-select">
                 {% for deger, etiket in finans_turleri %}
@@ -29,7 +29,7 @@
         <div>
             <span class="hero-kicker">PWA Hızlı İşlem</span>
             <h2 class="section-title mb-1">Hızlı Harcama Ekle</h2>
-            <div class="text-muted small">Telefonda birkaç saniye içinde seçili finans türüne gider kaydı oluştur.</div>
+            <div class="text-muted small">Telefonda birkaç saniye içinde seçili finans alanına gider kaydı oluştur.</div>
         </div>
         <span class="quick-expense-icon"><i class="bi bi-lightning-charge"></i></span>
     </div>
@@ -45,7 +45,7 @@
                 </div>
             </div>
             <div>
-                <label for="hizli_finans_turu" class="form-label">Finans türü</label>
+                <label for="hizli_finans_turu" class="form-label">Finans alanı</label>
                 <select id="hizli_finans_turu" name="finans_turu" class="form-select form-select-lg" required>
                     {% for deger, etiket in finans_turleri %}
                         <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
@@ -77,7 +77,7 @@
             <i class="bi bi-exclamation-triangle mt-1"></i>
             <div>
                 <strong>Önce gider kategorisi oluşturmalısınız.</strong>
-                <div class="small mt-1">Hızlı harcama eklemek için {{ secilen_finans_turu|title }} finans türünde en az bir gider kategorisi gerekir.</div>
+                <div class="small mt-1">Hızlı harcama eklemek için {{ secilen_finans_alani.ad|default:"seçili" }} alanında en az bir gider kategorisi gerekir.</div>
                 <a href="/kategoriler/?finans_turu={{ secilen_finans_turu }}" class="btn btn-sm btn-warning mt-3">Kategori Oluştur</a>
             </div>
         </div>

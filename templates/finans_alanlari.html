@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Finans Alanları | FinansTakip{% endblock %}
+{% block page_title %}Finans Alanları{% endblock %}
+{% block page_subtitle %}Kişisel, ev, işletme veya kendi tanımladığın finans çalışma alanlarını yönet.{% endblock %}
+
+{% block content %}
+<section class="row g-4 mb-4">
+    <div class="col-xl-4">
+        <div class="card p-4 h-100">
+            <h2 class="section-title mb-3">Yeni Finans Alanı</h2>
+            {% if hata %}
+                <div class="alert alert-danger">{{ hata }}</div>
+            {% endif %}
+            <form method="POST" class="d-grid gap-3">
+                {% csrf_token %}
+                <div>
+                    <label class="form-label">Ad</label>
+                    <input type="text" name="ad" class="form-control" maxlength="100" placeholder="Örn. Tatil Fonu, Şirket, Aile" required>
+                </div>
+                <div>
+                    <label class="form-label">Açıklama</label>
+                    <textarea name="aciklama" class="form-control" rows="3" placeholder="Opsiyonel açıklama"></textarea>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label">Renk</label>
+                        <input type="color" name="renk" class="form-control form-control-color w-100" value="#2563eb">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">İkon</label>
+                        <select name="ikon" class="form-select">
+                            <option value="wallet2">Cüzdan</option>
+                            <option value="house">Ev</option>
+                            <option value="briefcase">İş</option>
+                            <option value="piggy-bank">Birikim</option>
+                            <option value="graph-up">Yatırım</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-icon"><i class="bi bi-plus-circle"></i>Alan Oluştur</button>
+            </form>
+        </div>
+    </div>
+    <div class="col-xl-8">
+        <div class="row g-3">
+            {% for ozet in alan_ozetleri %}
+                <div class="col-md-6">
+                    <div class="card p-4 h-100">
+                        <div class="card-toolbar mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="metric-icon" style="background: {{ ozet.alan.renk }}22; color: {{ ozet.alan.renk }};">
+                                    <i class="bi bi-{{ ozet.alan.ikon|default:'wallet2' }}"></i>
+                                </span>
+                                <div>
+                                    <h2 class="section-title mb-0">{{ ozet.alan.ad }}</h2>
+                                    <div class="text-muted small">{{ ozet.alan.aciklama|default:"Açıklama yok" }}</div>
+                                </div>
+                            </div>
+                            {% if secilen_finans_turu == ozet.alan.id|stringformat:"s" %}
+                                <span class="badge text-bg-primary">Seçili</span>
+                            {% endif %}
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="summary-tile"><span>Gelir</span><strong>{{ ozet.toplam_gelir }} TL</strong></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="summary-tile"><span>Gider</span><strong>{{ ozet.toplam_gider }} TL</strong></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="summary-tile"><span>Bakiye</span><strong>{{ ozet.bakiye }} TL</strong></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="summary-tile"><span>Kayıt</span><strong>{{ ozet.kayit_sayisi }}</strong></div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="/?finans_turu={{ ozet.alan.id }}" class="btn btn-outline-primary btn-sm btn-icon"><i class="bi bi-grid"></i>Dashboard</a>
+                            <a href="/finans-alani-duzenle/{{ ozet.alan.id }}/" class="btn btn-outline-secondary btn-sm btn-icon"><i class="bi bi-pencil"></i>Düzenle</a>
+                            <button class="btn btn-outline-danger btn-sm btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#silModal{{ ozet.alan.id }}">
+                                <i class="bi bi-trash"></i>Sil
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="silModal{{ ozet.alan.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">{{ ozet.alan.ad }} silinsin mi?</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                            </div>
+                            <div class="modal-body">
+                                Bu işlem bu finans alanına bağlı {{ ozet.kayit_sayisi }} kaydı da siler. İşlem geri alınamaz.
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Vazgeç</button>
+                                <form method="POST" action="/finans-alani-sil/{{ ozet.alan.id }}/">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Evet, Sil</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="empty-state">Henüz finans alanı yok.</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

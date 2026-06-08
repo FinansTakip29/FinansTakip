@@ -2,7 +2,7 @@
 
 {% block title %}Tekrarlayan Ödemeler | FinansTakip{% endblock %}
 {% block page_title %}Tekrarlayan Ödemeler{% endblock %}
-{% block page_subtitle %}Finans türüne bağlı düzenli ödemeleri ve ödeme dönemlerini takip et.{% endblock %}
+{% block page_subtitle %}Finans alanına bağlı düzenli ödemeleri ve ödeme dönemlerini takip et.{% endblock %}
 
 {% block content %}
 {% if hata %}
@@ -14,7 +14,7 @@
         <div class="card p-4">
             <h2 class="section-title">Ödeme Ekle</h2>
             <form method="GET" class="mb-3">
-                <label class="form-label">Finans Türü</label>
+                <label class="form-label">Finans Alanı</label>
                 <select name="finans_turu" class="form-select" onchange="this.form.submit()">
                     {% for deger, etiket in finans_turleri %}
                         <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>

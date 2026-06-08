@@ -13,24 +13,62 @@ FINANS_TURU_SECENEKLERI = [
 ]
 
 
+class FinansAlani(models.Model):
+    kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    ad = models.CharField(max_length=100)
+    aciklama = models.TextField(blank=True)
+    renk = models.CharField(max_length=20, default="#2563eb")
+    ikon = models.CharField(max_length=50, default="wallet2")
+    olusturulma_tarihi = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("kullanici", "ad")
+        ordering = ("ad",)
+
+    def __str__(self):
+        return self.ad
+
+
+def _finans_turu_alan(instance):
+    if not instance.finans_alani_id and instance.kullanici_id and instance.finans_turu:
+        instance.finans_alani = FinansAlani.objects.filter(
+            kullanici_id=instance.kullanici_id,
+            id=instance.finans_turu,
+        ).first()
+    if instance.finans_alani_id:
+        return str(instance.finans_alani_id)
+    return instance.finans_turu or FINANS_KISISEL
+
+
 class Gelir(models.Model):
     kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    finans_turu = models.CharField(max_length=20, choices=FINANS_TURU_SECENEKLERI, default=FINANS_KISISEL)
+    finans_turu = models.CharField(max_length=64, default=FINANS_KISISEL)
+    finans_alani = models.ForeignKey(FinansAlani, on_delete=models.SET_NULL, null=True, blank=True)
     tarih = models.DateField()
     aciklama = models.CharField(max_length=200)
     tutar = models.DecimalField(max_digits=10, decimal_places=2)
     kategori = models.CharField(max_length=100)
+
+    def save(self, *args, **kwargs):
+        self.finans_turu = _finans_turu_alan(self)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.aciklama} - {self.tutar} TL"
 
+
 class Gider(models.Model):
     kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
-    finans_turu = models.CharField(max_length=20, choices=FINANS_TURU_SECENEKLERI, default=FINANS_KISISEL)
+    finans_turu = models.CharField(max_length=64, default=FINANS_KISISEL)
+    finans_alani = models.ForeignKey(FinansAlani, on_delete=models.SET_NULL, null=True, blank=True)
     tarih = models.DateField()
     aciklama = models.CharField(max_length=200)
     tutar = models.DecimalField(max_digits=10, decimal_places=2)
     kategori = models.CharField(max_length=100)
+
+    def save(self, *args, **kwargs):
+        self.finans_turu = _finans_turu_alan(self)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.aciklama
@@ -38,7 +76,8 @@ class Gider(models.Model):
 
 class ButceHedefi(models.Model):
     kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    finans_turu = models.CharField(max_length=20, choices=FINANS_TURU_SECENEKLERI, default=FINANS_KISISEL)
+    finans_turu = models.CharField(max_length=64, default=FINANS_KISISEL)
+    finans_alani = models.ForeignKey(FinansAlani, on_delete=models.SET_NULL, null=True, blank=True)
     yil = models.PositiveIntegerField()
     ay = models.PositiveSmallIntegerField()
     hedef_tutar = models.DecimalField(max_digits=10, decimal_places=2)
@@ -46,13 +85,18 @@ class ButceHedefi(models.Model):
     class Meta:
         unique_together = ("kullanici", "finans_turu", "yil", "ay")
 
+    def save(self, *args, **kwargs):
+        self.finans_turu = _finans_turu_alan(self)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.kullanici.username} - {self.ay}/{self.yil}: {self.hedef_tutar} TL"
 
 
 class KategoriButcesi(models.Model):
     kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    finans_turu = models.CharField(max_length=20, choices=FINANS_TURU_SECENEKLERI, default=FINANS_KISISEL)
+    finans_turu = models.CharField(max_length=64, default=FINANS_KISISEL)
+    finans_alani = models.ForeignKey(FinansAlani, on_delete=models.SET_NULL, null=True, blank=True)
     kategori = models.ForeignKey("Kategori", on_delete=models.CASCADE)
     yil = models.PositiveIntegerField()
     ay = models.PositiveSmallIntegerField()
@@ -61,13 +105,18 @@ class KategoriButcesi(models.Model):
     class Meta:
         unique_together = ("kullanici", "finans_turu", "kategori", "yil", "ay")
 
+    def save(self, *args, **kwargs):
+        self.finans_turu = _finans_turu_alan(self)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.kategori.ad} - {self.ay}/{self.yil}: {self.hedef_tutar} TL"
 
 
 class BirikimHedefi(models.Model):
     kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    finans_turu = models.CharField(max_length=20, choices=FINANS_TURU_SECENEKLERI, default=FINANS_KISISEL)
+    finans_turu = models.CharField(max_length=64, default=FINANS_KISISEL)
+    finans_alani = models.ForeignKey(FinansAlani, on_delete=models.SET_NULL, null=True, blank=True)
     hedef_adi = models.CharField(max_length=120)
     hedef_tutar = models.DecimalField(max_digits=12, decimal_places=2)
     mevcut_tutar = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -75,6 +124,10 @@ class BirikimHedefi(models.Model):
     hedef_tarihi = models.DateField(null=True, blank=True)
     aktif = models.BooleanField(default=True)
     aciklama = models.TextField(blank=True)
+
+    def save(self, *args, **kwargs):
+        self.finans_turu = _finans_turu_alan(self)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.hedef_adi} - {self.mevcut_tutar}/{self.hedef_tutar} TL"
@@ -90,12 +143,17 @@ class Kategori(models.Model):
     ]
 
     kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    finans_turu = models.CharField(max_length=20, choices=FINANS_TURU_SECENEKLERI, default=FINANS_KISISEL)
+    finans_turu = models.CharField(max_length=64, default=FINANS_KISISEL)
+    finans_alani = models.ForeignKey(FinansAlani, on_delete=models.SET_NULL, null=True, blank=True)
     ad = models.CharField(max_length=100)
     tur = models.CharField(max_length=10, choices=TUR_SECENEKLERI)
 
     class Meta:
         unique_together = ("kullanici", "finans_turu", "ad", "tur")
+
+    def save(self, *args, **kwargs):
+        self.finans_turu = _finans_turu_alan(self)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.ad} ({self.get_tur_display()})"
@@ -129,7 +187,8 @@ class TekrarlayanOdeme(models.Model):
     ]
 
     kullanici = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    finans_turu = models.CharField(max_length=20, choices=FINANS_TURU_SECENEKLERI, default=FINANS_KISISEL)
+    finans_turu = models.CharField(max_length=64, default=FINANS_KISISEL)
+    finans_alani = models.ForeignKey(FinansAlani, on_delete=models.SET_NULL, null=True, blank=True)
     kategori = models.ForeignKey(Kategori, on_delete=models.CASCADE)
     odeme_adi = models.CharField(max_length=100)
     aciklama = models.CharField(max_length=200, blank=True)
@@ -141,6 +200,10 @@ class TekrarlayanOdeme(models.Model):
     odeme_durumu = models.CharField(max_length=20, choices=ODEME_DURUMU_SECENEKLERI, default=BEKLIYOR)
     son_olusturma_tarihi = models.DateField(null=True, blank=True)
     son_gider = models.ForeignKey(Gider, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.finans_turu = _finans_turu_alan(self)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.odeme_adi} - {self.tutar} TL"

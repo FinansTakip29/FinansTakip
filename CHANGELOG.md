@@ -43,6 +43,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Repository temizliği kapsamında Python cache dosyaları Git takibinden çıkarıldı, `.gitignore` kuralları genişletildi ve deploy bağımlılıkları UTF-8 `requirements.txt` formatında düzenlendi.
 - Kullanıcıya ve finans türüne özel kategori bazlı bütçe hedefleri, birikim hedefleri, hedefe katkı işlemi ve finansal sağlık öneri motoru eklendi.
 - PWA dashboard için hızlı harcama ekleme kartı, `/hizli-gider-ekle/` endpoint'i ve manifest hızlı erişim shortcut'ı eklendi.
+- Sabit finans türü sistemi yerine kullanıcının istediği kadar alan oluşturabildiği Finans Alanı sistemi, alan yönetimi ekranları ve eski finans türü verilerini yeni alanlara taşıyan migration eklendi.
 
 ### Düzeltildi
 - Render production startup sürecinde migrationların otomatik uygulanması için deploy komutları `build.sh`, `start.sh`, `Procfile` ve `render.yaml` üzerinden düzenlendi.

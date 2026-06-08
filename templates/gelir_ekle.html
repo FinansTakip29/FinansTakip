@@ -2,7 +2,7 @@
 
 {% block title %}Gelirler | FinansTakip{% endblock %}
 {% block page_title %}Gelirler{% endblock %}
-{% block page_subtitle %}Seçili finans türüne ait gelir kayıtlarını ekle, filtrele ve yönet.{% endblock %}
+{% block page_subtitle %}Seçili finans alanına ait gelir kayıtlarını ekle, filtrele ve yönet.{% endblock %}
 
 {% block content %}
 {% if hata %}
@@ -16,7 +16,7 @@
             <form method="POST" class="d-grid gap-3">
                 {% csrf_token %}
                 <div>
-                    <label for="finans_turu" class="form-label">Finans Türü</label>
+                    <label for="finans_turu" class="form-label">Finans Alanı</label>
                     <select id="finans_turu" name="finans_turu" class="form-select">
                         {% for deger, etiket in finans_turleri %}
                             <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
@@ -61,7 +61,7 @@
             </div>
             <form method="GET" class="row g-3 mb-4">
                 <div class="col-md-6 col-lg-3">
-                    <label class="form-label">Finans Türü</label>
+                    <label class="form-label">Finans Alanı</label>
                     <select name="finans_turu" class="form-select">
                         {% for deger, etiket in finans_turleri %}
                             <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>

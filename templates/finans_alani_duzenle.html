@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Finans Alanı Düzenle | FinansTakip{% endblock %}
+{% block page_title %}Finans Alanı Düzenle{% endblock %}
+{% block page_subtitle %}{{ alan.ad }} alanının görünümünü ve açıklamasını güncelle.{% endblock %}
+
+{% block content %}
+<section class="card p-4">
+    {% if hata %}
+        <div class="alert alert-danger">{{ hata }}</div>
+    {% endif %}
+    <form method="POST" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-6">
+            <label class="form-label">Ad</label>
+            <input type="text" name="ad" class="form-control" maxlength="100" value="{{ alan.ad }}" required>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Renk</label>
+            <input type="color" name="renk" class="form-control form-control-color w-100" value="{{ alan.renk }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">İkon</label>
+            <select name="ikon" class="form-select">
+                <option value="wallet2" {% if alan.ikon == "wallet2" %}selected{% endif %}>Cüzdan</option>
+                <option value="house" {% if alan.ikon == "house" %}selected{% endif %}>Ev</option>
+                <option value="briefcase" {% if alan.ikon == "briefcase" %}selected{% endif %}>İş</option>
+                <option value="piggy-bank" {% if alan.ikon == "piggy-bank" %}selected{% endif %}>Birikim</option>
+                <option value="graph-up" {% if alan.ikon == "graph-up" %}selected{% endif %}>Yatırım</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <label class="form-label">Açıklama</label>
+            <textarea name="aciklama" class="form-control" rows="4">{{ alan.aciklama }}</textarea>
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary btn-icon"><i class="bi bi-check2-circle"></i>Kaydet</button>
+            <a href="/finans-alanlari/?finans_turu={{ alan.id }}" class="btn btn-secondary btn-icon"><i class="bi bi-arrow-left"></i>Geri Dön</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

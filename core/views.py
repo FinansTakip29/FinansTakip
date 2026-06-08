@@ -36,6 +36,7 @@ from .models import (
     FINANS_TURU_SECENEKLERI,
     BirikimHedefi,
     ButceHedefi,
+    FinansAlani,
     Gelir,
     Gider,
     Kategori,
@@ -253,7 +254,56 @@ def offline(request):
         raise
 
 
-def _secilen_finans_turu(veri):
+VARSAYILAN_FINANS_ALANI_ADI = "Kişisel Finans"
+ESKI_FINANS_ALANI_ADLARI = {
+    FINANS_KISISEL: "Kişisel Finans",
+    "ev": "Ev Finansı",
+    "isyeri": "İşletme Finansı",
+}
+
+
+def _varsayilan_finans_alani(kullanici):
+    alan, _ = FinansAlani.objects.get_or_create(
+        kullanici=kullanici,
+        ad=VARSAYILAN_FINANS_ALANI_ADI,
+        defaults={
+            "aciklama": "Varsayılan finans alanı",
+            "renk": "#2563eb",
+            "ikon": "wallet2",
+        },
+    )
+    return alan
+
+
+def _finans_alanlari(kullanici):
+    if kullanici and kullanici.is_authenticated:
+        _varsayilan_finans_alani(kullanici)
+        return FinansAlani.objects.filter(kullanici=kullanici).order_by("ad")
+    return FinansAlani.objects.none()
+
+
+def _secilen_finans_alani(kullanici, veri):
+    alanlar = _finans_alanlari(kullanici)
+    secim = veri.get("finans_turu") or veri.get("finans_alani")
+
+    if secim:
+        alan = alanlar.filter(id=secim).first()
+        if alan:
+            return alan
+
+        eski_ad = ESKI_FINANS_ALANI_ADLARI.get(secim)
+        if eski_ad:
+            alan = alanlar.filter(ad=eski_ad).first()
+            if alan:
+                return alan
+
+    return alanlar.first() or _varsayilan_finans_alani(kullanici)
+
+
+def _secilen_finans_turu(veri, kullanici=None):
+    if kullanici and kullanici.is_authenticated:
+        return str(_secilen_finans_alani(kullanici, veri).id)
+
     finans_turu = veri.get("finans_turu") or FINANS_KISISEL
     gecerli_turler = [deger for deger, _ in FINANS_TURU_SECENEKLERI]
     if finans_turu not in gecerli_turler:
@@ -261,14 +311,30 @@ def _secilen_finans_turu(veri):
     return finans_turu
 
 
-def _finans_turu_context(finans_turu):
+def _finans_alani_by_id(kullanici, finans_turu):
+    return _finans_alanlari(kullanici).filter(id=finans_turu).first() or _varsayilan_finans_alani(kullanici)
+
+
+def _finans_turu_context(finans_turu, kullanici=None):
+    if kullanici and kullanici.is_authenticated:
+        alanlar = list(_finans_alanlari(kullanici))
+        secilen = _finans_alani_by_id(kullanici, finans_turu)
+        return {
+            "finans_turleri": [(str(alan.id), alan.ad) for alan in alanlar],
+            "finans_alanlari": alanlar,
+            "secilen_finans_alani": secilen,
+            "secilen_finans_turu": str(secilen.id),
+        }
+
     return {
         "finans_turleri": FINANS_TURU_SECENEKLERI,
+        "finans_alanlari": [],
+        "secilen_finans_alani": None,
         "secilen_finans_turu": finans_turu,
     }
 
 
-def _dashboard_default_context(finans_turu):
+def _dashboard_default_context(finans_turu, kullanici=None):
     bugun = timezone.now().date()
     aylar = []
     ay_baslangici = bugun.replace(day=1)
@@ -277,7 +343,7 @@ def _dashboard_default_context(finans_turu):
         aylar.append(f"{ay_tarihi.month:02d}/{ay_tarihi.year}")
 
     return {
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, kullanici),
         "butce_hedefi": None,
         "butce_yil": bugun.year,
         "butce_ay": bugun.month,
@@ -581,7 +647,7 @@ def _aylik_butce_verileri(kullanici, finans_turu):
         "kalan_butce": kalan_butce,
         "butce_uyari": butce_uyari,
         "butce_kullanim_orani": round(float(kullanim_orani), 2),
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, kullanici),
     }
 
 
@@ -745,7 +811,7 @@ def _rapor_verileri(kullanici, finans_turu, ay=None):
         "aylik_gider": aylik_gider,
         "aylik_bakiye": aylik_bakiye,
         "secilen_ay": ay,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, kullanici),
     }
 
 
@@ -1186,7 +1252,7 @@ def yedekleme(request):
         "tekrarlayan_odeme_sayisi": TekrarlayanOdeme.objects.filter(kullanici=request.user).count(),
         "odeme_donemi_sayisi": OdemeDonemi.objects.filter(tekrarlayan_odeme__kullanici=request.user).count(),
     }
-    context.update(_finans_turu_context(FINANS_KISISEL))
+    context.update(_finans_turu_context(FINANS_KISISEL, request.user))
     return render(request, "yedekleme.html", context)
 
 
@@ -1354,6 +1420,7 @@ def kayit(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             kullanici = form.save()
+            _varsayilan_finans_alani(kullanici)
             login(request, kullanici)
             return redirect("home")
     else:
@@ -1374,6 +1441,7 @@ def giris(request):
             if form.is_valid():
                 kullanici = form.get_user()
                 login(request, kullanici)
+                _varsayilan_finans_alani(kullanici)
                 _tekrarlayan_odemeleri_olustur(kullanici)
                 return redirect("home")
         else:
@@ -1395,8 +1463,8 @@ def cikis(request):
 @login_required
 def home(request):
     try:
-        finans_turu = _secilen_finans_turu(request.GET)
-        context = _dashboard_default_context(finans_turu)
+        finans_turu = _secilen_finans_turu(request.GET, request.user)
+        context = _dashboard_default_context(finans_turu, request.user)
 
         toplam_gelir = Gelir.objects.filter(kullanici=request.user, finans_turu=finans_turu).aggregate(
             Sum("tutar")
@@ -1501,7 +1569,7 @@ def hizli_gider_ekle(request):
     if request.method != "POST":
         return redirect("home")
 
-    finans_turu = _secilen_finans_turu(request.POST)
+    finans_turu = _secilen_finans_turu(request.POST, request.user)
     tutar = _parse_decimal(request.POST.get("tutar"))
     kategori = Kategori.objects.filter(
         id=request.POST.get("kategori"),
@@ -1533,7 +1601,7 @@ def hizli_gider_ekle(request):
 
 @login_required
 def butce_hedefi(request):
-    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET)
+    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET, request.user)
     butce_verileri = _aylik_butce_verileri(request.user, finans_turu)
     hedef = butce_verileri["butce_hedefi"]
     hata = None
@@ -1565,9 +1633,125 @@ def butce_hedefi(request):
     })
 
 
+def _finans_alani_ozeti(kullanici, alan):
+    finans_turu = str(alan.id)
+    toplam_gelir = Gelir.objects.filter(kullanici=kullanici, finans_turu=finans_turu).aggregate(Sum("tutar"))["tutar__sum"] or 0
+    toplam_gider = Gider.objects.filter(kullanici=kullanici, finans_turu=finans_turu).aggregate(Sum("tutar"))["tutar__sum"] or 0
+    kayit_sayisi = (
+        Gelir.objects.filter(kullanici=kullanici, finans_turu=finans_turu).count()
+        + Gider.objects.filter(kullanici=kullanici, finans_turu=finans_turu).count()
+        + Kategori.objects.filter(kullanici=kullanici, finans_turu=finans_turu).count()
+        + ButceHedefi.objects.filter(kullanici=kullanici, finans_turu=finans_turu).count()
+        + KategoriButcesi.objects.filter(kullanici=kullanici, finans_turu=finans_turu).count()
+        + BirikimHedefi.objects.filter(kullanici=kullanici, finans_turu=finans_turu).count()
+        + TekrarlayanOdeme.objects.filter(kullanici=kullanici, finans_turu=finans_turu).count()
+    )
+    return {
+        "alan": alan,
+        "toplam_gelir": toplam_gelir,
+        "toplam_gider": toplam_gider,
+        "bakiye": toplam_gelir - toplam_gider,
+        "kayit_sayisi": kayit_sayisi,
+    }
+
+
+@login_required
+def finans_alanlari(request):
+    _varsayilan_finans_alani(request.user)
+    hata = None
+
+    if request.method == "POST":
+        ad = (request.POST.get("ad") or "").strip()
+        aciklama = (request.POST.get("aciklama") or "").strip()
+        renk = (request.POST.get("renk") or "#2563eb").strip()
+        ikon = (request.POST.get("ikon") or "wallet2").strip()
+
+        if not ad:
+            hata = "Finans alanı adı zorunludur."
+        elif FinansAlani.objects.filter(kullanici=request.user, ad=ad).exists():
+            hata = "Bu isimde bir finans alanı zaten var."
+        else:
+            alan = FinansAlani.objects.create(
+                kullanici=request.user,
+                ad=ad,
+                aciklama=aciklama,
+                renk=renk,
+                ikon=ikon,
+            )
+            messages.success(request, "Finans alanı oluşturuldu.")
+            return redirect(f"/finans-alanlari/?finans_turu={alan.id}")
+
+    alanlar = list(_finans_alanlari(request.user))
+    ozetler = [_finans_alani_ozeti(request.user, alan) for alan in alanlar]
+    secilen_finans_turu = _secilen_finans_turu(request.GET, request.user)
+    return render(request, "finans_alanlari.html", {
+        "alan_ozetleri": ozetler,
+        "hata": hata,
+        **_finans_turu_context(secilen_finans_turu, request.user),
+    })
+
+
+@login_required
+def finans_alani_duzenle(request, id):
+    alan = get_object_or_404(FinansAlani, id=id, kullanici=request.user)
+    hata = None
+
+    if request.method == "POST":
+        ad = (request.POST.get("ad") or "").strip()
+        aciklama = (request.POST.get("aciklama") or "").strip()
+        renk = (request.POST.get("renk") or "#2563eb").strip()
+        ikon = (request.POST.get("ikon") or "wallet2").strip()
+
+        if not ad:
+            hata = "Finans alanı adı zorunludur."
+        elif FinansAlani.objects.filter(kullanici=request.user, ad=ad).exclude(id=alan.id).exists():
+            hata = "Bu isimde bir finans alanı zaten var."
+        else:
+            alan.ad = ad
+            alan.aciklama = aciklama
+            alan.renk = renk
+            alan.ikon = ikon
+            alan.save()
+            messages.success(request, "Finans alanı güncellendi.")
+            return redirect(f"/finans-alanlari/?finans_turu={alan.id}")
+
+    return render(request, "finans_alani_duzenle.html", {
+        "alan": alan,
+        "hata": hata,
+        **_finans_turu_context(str(alan.id), request.user),
+    })
+
+
+@login_required
+def finans_alani_sil(request, id):
+    alan = get_object_or_404(FinansAlani, id=id, kullanici=request.user)
+    if request.method != "POST":
+        return redirect(f"/finans-alanlari/?finans_turu={alan.id}")
+
+    if FinansAlani.objects.filter(kullanici=request.user).count() <= 1:
+        messages.error(request, "Son finans alanı silinemez.")
+        return redirect(f"/finans-alanlari/?finans_turu={alan.id}")
+
+    finans_turu = str(alan.id)
+    with transaction.atomic():
+        OdemeDonemi.objects.filter(tekrarlayan_odeme__kullanici=request.user, tekrarlayan_odeme__finans_turu=finans_turu).delete()
+        TekrarlayanOdeme.objects.filter(kullanici=request.user, finans_turu=finans_turu).delete()
+        KategoriButcesi.objects.filter(kullanici=request.user, finans_turu=finans_turu).delete()
+        ButceHedefi.objects.filter(kullanici=request.user, finans_turu=finans_turu).delete()
+        BirikimHedefi.objects.filter(kullanici=request.user, finans_turu=finans_turu).delete()
+        Gelir.objects.filter(kullanici=request.user, finans_turu=finans_turu).delete()
+        Gider.objects.filter(kullanici=request.user, finans_turu=finans_turu).delete()
+        Kategori.objects.filter(kullanici=request.user, finans_turu=finans_turu).delete()
+        alan.delete()
+
+    yeni_alan = _finans_alanlari(request.user).first()
+    messages.success(request, "Finans alanı ve bağlı kayıtları silindi.")
+    return redirect(f"/finans-alanlari/?finans_turu={yeni_alan.id}")
+
+
 @login_required
 def kategori_butceleri(request):
-    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET)
+    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET, request.user)
     bugun = timezone.now().date()
     yil = _parse_int(request.POST.get("yil") or request.GET.get("yil"), bugun.year)
     ay = _parse_int(request.POST.get("ay") or request.GET.get("ay"), bugun.month)
@@ -1634,14 +1818,14 @@ def kategori_butceleri(request):
         "yil": yil,
         "ay": ay,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 
 @login_required
 def kategori_butcesi_duzenle(request, id):
     butce = get_object_or_404(KategoriButcesi, id=id, kullanici=request.user)
-    finans_turu = _secilen_finans_turu(request.POST) if request.method == "POST" else butce.finans_turu
+    finans_turu = _secilen_finans_turu(request.POST, request.user) if request.method == "POST" else butce.finans_turu
     kategoriler = Kategori.objects.filter(
         kullanici=request.user,
         finans_turu=finans_turu,
@@ -1683,7 +1867,7 @@ def kategori_butcesi_duzenle(request, id):
         "butce": butce,
         "kategoriler": kategoriler,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 
@@ -1700,7 +1884,7 @@ def kategori_butcesi_sil(request, id):
 
 @login_required
 def birikim_hedefleri(request):
-    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET)
+    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET, request.user)
     hata = None
 
     if request.method == "POST":
@@ -1740,14 +1924,14 @@ def birikim_hedefleri(request):
         "hedef_kayitlari": hedefler,
         "tum_hedefler": tum_hedefler,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 
 @login_required
 def birikim_hedefi_duzenle(request, id):
     hedef = get_object_or_404(BirikimHedefi, id=id, kullanici=request.user)
-    finans_turu = _secilen_finans_turu(request.POST) if request.method == "POST" else hedef.finans_turu
+    finans_turu = _secilen_finans_turu(request.POST, request.user) if request.method == "POST" else hedef.finans_turu
     hata = None
 
     if request.method == "POST":
@@ -1778,7 +1962,7 @@ def birikim_hedefi_duzenle(request, id):
     return render(request, "birikim_hedefi_duzenle.html", {
         "hedef": hedef,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 
@@ -1807,7 +1991,7 @@ def birikim_hedefi_katki(request, id):
 
 @login_required
 def kategoriler(request):
-    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET)
+    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET, request.user)
     hata = None
 
     if request.method == "POST":
@@ -1830,7 +2014,7 @@ def kategoriler(request):
         "kategoriler": kullanici_kategorileri,
         "turler": Kategori.TUR_SECENEKLERI,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 
@@ -1843,7 +2027,7 @@ def kategori_duzenle(request, id):
     if request.method == "POST":
         ad = request.POST.get("ad", "").strip()
         tur = request.POST.get("tur")
-        finans_turu = _secilen_finans_turu(request.POST)
+        finans_turu = _secilen_finans_turu(request.POST, request.user)
 
         if not ad or tur not in [Kategori.GELIR, Kategori.GIDER]:
             hata = "Lütfen kategori adı ve türünü doğru girin."
@@ -1860,7 +2044,7 @@ def kategori_duzenle(request, id):
         "kategori": kategori,
         "turler": Kategori.TUR_SECENEKLERI,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 
@@ -1874,7 +2058,7 @@ def kategori_sil(request, id):
 
 @login_required
 def tekrarlayan_odemeler(request):
-    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET)
+    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET, request.user)
     kategoriler = Kategori.objects.filter(
         kullanici=request.user,
         finans_turu=finans_turu,
@@ -1958,14 +2142,14 @@ def tekrarlayan_odemeler(request):
         "kategoriler": kategoriler,
         "tekrar_turleri": TekrarlayanOdeme.TEKRAR_TURU_SECENEKLERI,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 
 @login_required
 def tekrarlayan_odeme_duzenle(request, id):
     odeme = get_object_or_404(TekrarlayanOdeme, id=id, kullanici=request.user)
-    finans_turu = _secilen_finans_turu(request.POST) if request.method == "POST" else odeme.finans_turu
+    finans_turu = _secilen_finans_turu(request.POST, request.user) if request.method == "POST" else odeme.finans_turu
     kategoriler = Kategori.objects.filter(
         kullanici=request.user,
         finans_turu=finans_turu,
@@ -2023,7 +2207,7 @@ def tekrarlayan_odeme_duzenle(request, id):
         "kategoriler": kategoriler,
         "tekrar_turleri": TekrarlayanOdeme.TEKRAR_TURU_SECENEKLERI,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 
@@ -2060,7 +2244,7 @@ def odeme_donemi_odendi(request, id):
 
 @login_required
 def gelir_ekle(request):
-    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET)
+    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET, request.user)
     gelir_kategorileri = Kategori.objects.filter(
         kullanici=request.user,
         finans_turu=finans_turu,
@@ -2110,13 +2294,13 @@ def gelir_ekle(request):
         "gelirler": gelirler,
         "gelir_kategorileri": gelir_kategorileri,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 
 @login_required
 def gider_ekle(request):
-    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET)
+    finans_turu = _secilen_finans_turu(request.POST if request.method == "POST" else request.GET, request.user)
     gider_kategorileri = Kategori.objects.filter(
         kullanici=request.user,
         finans_turu=finans_turu,
@@ -2167,20 +2351,20 @@ def gider_ekle(request):
         "giderler": giderler,
         "gider_kategorileri": gider_kategorileri,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 @login_required
 def raporlar(request):
     ay = request.GET.get("ay")
-    finans_turu = _secilen_finans_turu(request.GET)
+    finans_turu = _secilen_finans_turu(request.GET, request.user)
     return render(request, "raporlar.html", _rapor_verileri(request.user, finans_turu, ay))
 
 
 @login_required
 def rapor_pdf(request):
     ay = request.GET.get("ay")
-    finans_turu = _secilen_finans_turu(request.GET)
+    finans_turu = _secilen_finans_turu(request.GET, request.user)
     veriler = _rapor_verileri(request.user, finans_turu, ay)
     buffer = BytesIO()
     font_adi = _pdf_font_adi()
@@ -2295,7 +2479,7 @@ def gider_sil(request, id):
 @login_required
 def gider_duzenle(request, id):
     gider = get_object_or_404(Gider, id=id, kullanici=request.user)
-    finans_turu = _secilen_finans_turu(request.POST) if request.method == "POST" else gider.finans_turu
+    finans_turu = _secilen_finans_turu(request.POST, request.user) if request.method == "POST" else gider.finans_turu
     gider_kategorileri = Kategori.objects.filter(
         kullanici=request.user,
         finans_turu=finans_turu,
@@ -2330,13 +2514,13 @@ def gider_duzenle(request, id):
         "gider": gider,
         "gider_kategorileri": gider_kategorileri,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })
 
 @login_required
 def gelir_duzenle(request, id):
     gelir = get_object_or_404(Gelir, id=id, kullanici=request.user)
-    finans_turu = _secilen_finans_turu(request.POST) if request.method == "POST" else gelir.finans_turu
+    finans_turu = _secilen_finans_turu(request.POST, request.user) if request.method == "POST" else gelir.finans_turu
     gelir_kategorileri = Kategori.objects.filter(
         kullanici=request.user,
         finans_turu=finans_turu,
@@ -2371,5 +2555,5 @@ def gelir_duzenle(request, id):
         "gelir": gelir,
         "gelir_kategorileri": gelir_kategorileri,
         "hata": hata,
-        **_finans_turu_context(finans_turu),
+        **_finans_turu_context(finans_turu, request.user),
     })

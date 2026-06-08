@@ -2,7 +2,7 @@
 
 {% block title %}Kategori Düzenle | FinansTakip{% endblock %}
 {% block page_title %}Kategori Düzenle{% endblock %}
-{% block page_subtitle %}Kategori adını, türünü ve finans türünü güncelle.{% endblock %}
+{% block page_subtitle %}Kategori adını, türünü ve finans alanınü güncelle.{% endblock %}
 
 {% block content %}
 <div class="card p-4 mx-auto" style="max-width: 640px;">
@@ -13,7 +13,7 @@
     <form method="POST" class="d-grid gap-3">
         {% csrf_token %}
         <div>
-            <label class="form-label">Finans Türü</label>
+            <label class="form-label">Finans Alanı</label>
             <select name="finans_turu" class="form-select" required>
                 {% for deger, etiket in finans_turleri %}
                     <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>

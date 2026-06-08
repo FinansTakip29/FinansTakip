@@ -2,7 +2,7 @@
 
 {% block title %}Bütçe Hedefleri | FinansTakip{% endblock %}
 {% block page_title %}Bütçe Hedefleri{% endblock %}
-{% block page_subtitle %}Aylık bütçe hedefini seçili finans türü için belirle.{% endblock %}
+{% block page_subtitle %}Aylık bütçe hedefini seçili finans alanı için belirle.{% endblock %}
 
 {% block content %}
 <div class="row g-4">
@@ -15,7 +15,7 @@
             <form method="POST" class="d-grid gap-3">
                 {% csrf_token %}
                 <div>
-                    <label class="form-label">Finans Türü</label>
+                    <label class="form-label">Finans Alanı</label>
                     <select name="finans_turu" class="form-select">
                         {% for deger, etiket in finans_turleri %}
                             <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>

@@ -12,7 +12,7 @@
     <form method="POST" class="row g-3">
         {% csrf_token %}
         <div class="col-md-6">
-            <label class="form-label">Finans Türü</label>
+            <label class="form-label">Finans Alanı</label>
             <select name="finans_turu" class="form-select" required>
                 {% for deger, etiket in finans_turleri %}
                     <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
