@@ -46,6 +46,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Sabit finans türü sistemi yerine kullanıcının istediği kadar alan oluşturabildiği Finans Alanı sistemi, alan yönetimi ekranları ve eski finans türü verilerini yeni alanlara taşıyan migration eklendi.
 
 ### Düzeltildi
+- Production ortamında `DATABASE_URL` zorunlu hale getirildi; `DEBUG=False` iken PostgreSQL dışındaki veritabanlarına veya SQLite fallback'ine düşülmesi engellendi.
 - Render production startup sürecinde migrationların otomatik uygulanması için deploy komutları `build.sh`, `start.sh`, `Procfile` ve `render.yaml` üzerinden düzenlendi.
 - Production 500 teşhisi için Django console logging güçlendirildi; login, PWA offline/service worker ve hızlı gider view hataları Render loglarında traceback üretecek şekilde loglandı.
 - Production dashboard 500 hatasını önlemek için ana sayfa context hesaplamaları güvenli varsayılanlarla korundu, opsiyonel dashboard bileşenleri hata durumunda boş veriyle render edilecek hale getirildi ve dashboard hata loglaması eklendi.

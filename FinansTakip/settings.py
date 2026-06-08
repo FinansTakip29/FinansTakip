@@ -154,6 +154,10 @@ WSGI_APPLICATION = 'FinansTakip.wsgi.application'
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
+    parsed_database_url = urlparse(DATABASE_URL)
+    if not DEBUG and parsed_database_url.scheme not in {'postgres', 'postgresql'}:
+        raise RuntimeError('DATABASE_URL must point to PostgreSQL when DEBUG=False.')
+
     DATABASES = {
         'default': dj_database_url.parse(
             DATABASE_URL,
@@ -162,6 +166,9 @@ if DATABASE_URL:
         )
     }
 else:
+    if not DEBUG:
+        raise RuntimeError('DATABASE_URL environment variable must be set when DEBUG=False.')
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
