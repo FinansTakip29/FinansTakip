@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: FinansTakip
+    env: python
+    buildCommand: bash build.sh
+    startCommand: bash start.sh
