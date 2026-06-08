@@ -10,10 +10,10 @@ from xml.sax.saxutils import escape
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.models import User
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import transaction
@@ -116,7 +116,6 @@ def _kullanici_ozetleri(kullanicilar):
 
 
 def _yonetim_sayilari():
-    User = get_user_model()
     bugun = timezone.localdate()
     return {
         "toplam_kullanici": User.objects.count(),
@@ -134,8 +133,7 @@ def _yonetim_sayilari():
 
 @_superuser_required
 def yonetim(request):
-    User = get_user_model()
-    son_kullanicilar = list(User.objects.order_by("-date_joined")[:10])
+    son_kullanicilar = list(User.objects.all().order_by("-date_joined")[:10])
     return render(request, "yonetim.html", {
         **_yonetim_sayilari(),
         "son_kullanicilar": _kullanici_ozetleri(son_kullanicilar),
@@ -144,10 +142,9 @@ def yonetim(request):
 
 @_superuser_required
 def yonetim_kullanicilar(request):
-    User = get_user_model()
     arama = request.GET.get("q", "").strip()
     durum = request.GET.get("durum", "").strip()
-    kullanicilar = User.objects.order_by("-date_joined")
+    kullanicilar = User.objects.all().order_by("-date_joined")
 
     if arama:
         kullanicilar = kullanicilar.filter(
@@ -171,7 +168,6 @@ def yonetim_kullanicilar(request):
 
 @_superuser_required
 def yonetim_kullanici_detay(request, id):
-    User = get_user_model()
     kullanici = get_object_or_404(User, id=id)
     context = {
         "hedef_kullanici": kullanici,
@@ -190,7 +186,6 @@ def yonetim_kullanici_detay(request, id):
 
 @_superuser_required
 def yonetim_kullanici_sil(request, id):
-    User = get_user_model()
     kullanici = get_object_or_404(User, id=id)
 
     if kullanici.id == request.user.id:
