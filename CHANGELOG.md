@@ -45,6 +45,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - PWA dashboard için hızlı harcama ekleme kartı, `/hizli-gider-ekle/` endpoint'i ve manifest hızlı erişim shortcut'ı eklendi.
 
 ### Düzeltildi
+- Production 500 teşhisi için Django console logging güçlendirildi; login, PWA offline/service worker ve hızlı gider view hataları Render loglarında traceback üretecek şekilde loglandı.
 - Production dashboard 500 hatasını önlemek için ana sayfa context hesaplamaları güvenli varsayılanlarla korundu, opsiyonel dashboard bileşenleri hata durumunda boş veriyle render edilecek hale getirildi ve dashboard hata loglaması eklendi.
 - Finansal öneriler ve dashboard uyarılarında görünen UTF-8/Türkçe karakter bozulmaları düzeltildi.
 - iPhone standalone PWA girişlerinde eski cache'lenmiş CSRF token'ı nedeniyle oluşabilen 403 hatasını önlemek için auth sayfaları cache dışı bırakıldı, service worker auth/navigasyon cache davranışı güvenli hale getirildi ve Render CSRF/host cookie ayarları güçlendirildi.

@@ -4,6 +4,7 @@ import json
 import logging
 from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from datetime import date, timedelta
+from functools import wraps
 from pathlib import Path
 from xml.sax.saxutils import escape
 
@@ -45,6 +46,21 @@ from .models import (
 
 
 logger = logging.getLogger(__name__)
+
+
+def _log_view_errors(message):
+    def decorator(view_func):
+        @wraps(view_func)
+        def wrapped(*args, **kwargs):
+            try:
+                return view_func(*args, **kwargs)
+            except Exception:
+                logger.exception(message)
+                raise
+
+        return wrapped
+
+    return decorator
 
 def health(request):
     return JsonResponse({"status": "ok"})
@@ -98,16 +114,17 @@ def manifest(request):
 
 
 def service_worker(request):
-    cache_name = "finanstakip-pwa-v4"
-    static_assets = [
-        "/offline/",
-        "/favicon.ico",
-        "/manifest.json",
-        static("css/app.css"),
-        static("js/app.js"),
-        *[static(f"icons/icon-{size}x{size}.png") for size in [72, 96, 128, 144, 152, 192, 384, 512]],
-    ]
-    script = f"""
+    try:
+        cache_name = "finanstakip-pwa-v4"
+        static_assets = [
+            "/offline/",
+            "/favicon.ico",
+            "/manifest.json",
+            static("css/app.css"),
+            static("js/app.js"),
+            *[static(f"icons/icon-{size}x{size}.png") for size in [72, 96, 128, 144, 152, 192, 384, 512]],
+        ]
+        script = f"""
 const CACHE_NAME = {json.dumps(cache_name)};
 const OFFLINE_URL = "/offline/";
 const STATIC_ASSETS = {json.dumps(static_assets)};
@@ -219,14 +236,21 @@ self.addEventListener("notificationclick", (event) => {{
     event.waitUntil(clients.openWindow(targetUrl));
 }});
 """
-    response = HttpResponse(script, content_type="application/javascript")
-    response["Service-Worker-Allowed"] = "/"
-    response["Cache-Control"] = "no-cache"
-    return response
+        response = HttpResponse(script, content_type="application/javascript")
+        response["Service-Worker-Allowed"] = "/"
+        response["Cache-Control"] = "no-cache"
+        return response
+    except Exception:
+        logger.exception("Service worker response error")
+        raise
 
 
 def offline(request):
-    return render(request, "offline.html")
+    try:
+        return render(request, "offline.html")
+    except Exception:
+        logger.exception("Offline page error")
+        raise
 
 
 def _secilen_finans_turu(veri):
@@ -1341,20 +1365,24 @@ def kayit(request):
 @never_cache
 @ensure_csrf_cookie
 def giris(request):
-    if request.user.is_authenticated:
-        return redirect("home")
-
-    if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            kullanici = form.get_user()
-            login(request, kullanici)
-            _tekrarlayan_odemeleri_olustur(kullanici)
+    try:
+        if request.user.is_authenticated:
             return redirect("home")
-    else:
-        form = AuthenticationForm()
 
-    return render(request, "giris.html", {"form": form})
+        if request.method == "POST":
+            form = AuthenticationForm(request, data=request.POST)
+            if form.is_valid():
+                kullanici = form.get_user()
+                login(request, kullanici)
+                _tekrarlayan_odemeleri_olustur(kullanici)
+                return redirect("home")
+        else:
+            form = AuthenticationForm()
+
+        return render(request, "giris.html", {"form": form})
+    except Exception:
+        logger.exception("Login view error")
+        raise
 
 
 @login_required
@@ -1466,6 +1494,7 @@ def home(request):
         raise
 
 
+@_log_view_errors("Quick expense view error")
 @login_required
 @never_cache
 def hizli_gider_ekle(request):
