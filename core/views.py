@@ -10,14 +10,16 @@ from xml.sax.saxutils import escape
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db import transaction
-from django.db.models import Sum
-from django.http import HttpResponse, JsonResponse
+from django.db.models import Count, Q, Sum
+from django.core.paginator import Paginator
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.templatetags.static import static
 from django.utils import timezone
@@ -62,6 +64,152 @@ def _log_view_errors(message):
         return wrapped
 
     return decorator
+
+
+def _superuser_required(view_func):
+    @wraps(view_func)
+    @login_required
+    def wrapped(request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return HttpResponseForbidden("Bu sayfaya sadece yetkili yöneticiler erişebilir.")
+        return view_func(request, *args, **kwargs)
+
+    return wrapped
+
+
+def _kullanici_sayilari(kullanicilar):
+    kullanici_idleri = [kullanici.id for kullanici in kullanicilar]
+    modeller = {
+        "gelir_sayisi": Gelir,
+        "gider_sayisi": Gider,
+        "kategori_sayisi": Kategori,
+    }
+    sonuc = {
+        kullanici_id: {
+            "gelir_sayisi": 0,
+            "gider_sayisi": 0,
+            "kategori_sayisi": 0,
+        }
+        for kullanici_id in kullanici_idleri
+    }
+
+    for anahtar, model in modeller.items():
+        for satir in model.objects.filter(kullanici_id__in=kullanici_idleri).values("kullanici_id").annotate(sayi=Count("id")):
+            sonuc[satir["kullanici_id"]][anahtar] = satir["sayi"]
+
+    return sonuc
+
+
+def _kullanici_ozetleri(kullanicilar):
+    sayilar = _kullanici_sayilari(kullanicilar)
+    return [
+        {
+            "kullanici": kullanici,
+            **sayilar.get(kullanici.id, {
+                "gelir_sayisi": 0,
+                "gider_sayisi": 0,
+                "kategori_sayisi": 0,
+            }),
+        }
+        for kullanici in kullanicilar
+    ]
+
+
+def _yonetim_sayilari():
+    User = get_user_model()
+    bugun = timezone.localdate()
+    return {
+        "toplam_kullanici": User.objects.count(),
+        "aktif_kullanici": User.objects.filter(is_active=True).count(),
+        "pasif_kullanici": User.objects.filter(is_active=False).count(),
+        "bugun_kayit": User.objects.filter(date_joined__date=bugun).count(),
+        "toplam_gelir": Gelir.objects.count(),
+        "toplam_gider": Gider.objects.count(),
+        "toplam_kategori": Kategori.objects.count(),
+        "toplam_butce": ButceHedefi.objects.count(),
+        "toplam_tekrarlayan_odeme": TekrarlayanOdeme.objects.count(),
+        "toplam_birikim_hedefi": BirikimHedefi.objects.count(),
+    }
+
+
+@_superuser_required
+def yonetim(request):
+    User = get_user_model()
+    son_kullanicilar = list(User.objects.order_by("-date_joined")[:10])
+    return render(request, "yonetim.html", {
+        **_yonetim_sayilari(),
+        "son_kullanicilar": _kullanici_ozetleri(son_kullanicilar),
+    })
+
+
+@_superuser_required
+def yonetim_kullanicilar(request):
+    User = get_user_model()
+    arama = request.GET.get("q", "").strip()
+    durum = request.GET.get("durum", "").strip()
+    kullanicilar = User.objects.order_by("-date_joined")
+
+    if arama:
+        kullanicilar = kullanicilar.filter(
+            Q(username__icontains=arama) | Q(email__icontains=arama)
+        )
+
+    if durum == "aktif":
+        kullanicilar = kullanicilar.filter(is_active=True)
+    elif durum == "pasif":
+        kullanicilar = kullanicilar.filter(is_active=False)
+
+    sayfalayici = Paginator(kullanicilar, 20)
+    sayfa = sayfalayici.get_page(request.GET.get("sayfa"))
+    return render(request, "yonetim_kullanicilar.html", {
+        "sayfa": sayfa,
+        "kullanici_kayitlari": _kullanici_ozetleri(list(sayfa.object_list)),
+        "arama": arama,
+        "durum": durum,
+    })
+
+
+@_superuser_required
+def yonetim_kullanici_detay(request, id):
+    User = get_user_model()
+    kullanici = get_object_or_404(User, id=id)
+    context = {
+        "hedef_kullanici": kullanici,
+        "gelir_sayisi": Gelir.objects.filter(kullanici=kullanici).count(),
+        "gider_sayisi": Gider.objects.filter(kullanici=kullanici).count(),
+        "kategori_sayisi": Kategori.objects.filter(kullanici=kullanici).count(),
+        "butce_hedefleri": ButceHedefi.objects.filter(kullanici=kullanici).order_by("-yil", "-ay")[:20],
+        "kategori_butceleri": KategoriButcesi.objects.filter(kullanici=kullanici).select_related("kategori").order_by("-yil", "-ay")[:20],
+        "tekrarlayan_odemeler": TekrarlayanOdeme.objects.filter(kullanici=kullanici).select_related("kategori").order_by("-id")[:20],
+        "birikim_hedefleri": BirikimHedefi.objects.filter(kullanici=kullanici).order_by("-id")[:20],
+        "son_gelirler": Gelir.objects.filter(kullanici=kullanici).order_by("-tarih", "-id")[:10],
+        "son_giderler": Gider.objects.filter(kullanici=kullanici).order_by("-tarih", "-id")[:10],
+    }
+    return render(request, "yonetim_kullanici_detay.html", context)
+
+
+@_superuser_required
+def yonetim_kullanici_sil(request, id):
+    User = get_user_model()
+    kullanici = get_object_or_404(User, id=id)
+
+    if kullanici.id == request.user.id:
+        messages.error(request, "Kendi yönetici hesabını silemezsin.")
+        return redirect("yonetim_kullanici_detay", id=kullanici.id)
+
+    if request.method == "POST":
+        kullanici_adi = kullanici.username
+        kullanici.delete()
+        messages.success(request, f"{kullanici_adi} kullanıcısı silindi.")
+        return redirect("yonetim_kullanicilar")
+
+    return render(request, "yonetim_kullanici_sil.html", {
+        "hedef_kullanici": kullanici,
+        "gelir_sayisi": Gelir.objects.filter(kullanici=kullanici).count(),
+        "gider_sayisi": Gider.objects.filter(kullanici=kullanici).count(),
+        "kategori_sayisi": Kategori.objects.filter(kullanici=kullanici).count(),
+    })
+
 
 def health(request):
     return JsonResponse({"status": "ok"})
@@ -145,6 +293,7 @@ const NEVER_CACHE_PATHS = [
     "/tekrarlayan-odemeler/",
     "/yedekleme/",
     "/raporlar/",
+    "/yonetim/",
 ];
 const PRECACHE_URLS = new Set(STATIC_ASSETS);
 

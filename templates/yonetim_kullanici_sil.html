@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Kullanıcı Silme Onayı{% endblock %}
+{% block page_title %}Kullanıcı Silme Onayı{% endblock %}
+{% block page_subtitle %}Bu işlem geri alınamaz. Silme yalnızca güvenli POST isteğiyle yapılır.{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8 col-xl-7">
+        <div class="card border-danger shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <strong><i class="bi bi-exclamation-triangle me-1"></i>Kullanıcı silinecek</strong>
+            </div>
+            <div class="card-body">
+                <p class="lead mb-3">
+                    <strong>{{ hedef_kullanici.username }}</strong> kullanıcısını silmek üzeresin.
+                </p>
+                <p class="text-muted">
+                    Bu işlem kullanıcının hesabını ve kullanıcıya bağlı finans kayıtlarını kalıcı olarak kaldırır.
+                </p>
+
+                <div class="row g-3 my-3">
+                    <div class="col-4">
+                        <div class="p-3 rounded bg-light text-center">
+                            <div class="h4 fw-bold mb-0">{{ gelir_sayisi }}</div>
+                            <div class="small text-muted">Gelir</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 rounded bg-light text-center">
+                            <div class="h4 fw-bold mb-0">{{ gider_sayisi }}</div>
+                            <div class="small text-muted">Gider</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-3 rounded bg-light text-center">
+                            <div class="h4 fw-bold mb-0">{{ kategori_sayisi }}</div>
+                            <div class="small text-muted">Kategori</div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" class="d-flex flex-column flex-sm-row gap-2">
+                    {% csrf_token %}
+                    <button class="btn btn-danger" type="submit">
+                        <i class="bi bi-trash me-1"></i>Evet, kullanıcıyı sil
+                    </button>
+                    <a class="btn btn-outline-secondary" href="{% url 'yonetim_kullanici_detay' hedef_kullanici.id %}">Vazgeç</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

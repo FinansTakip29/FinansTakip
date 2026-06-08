@@ -31,10 +31,16 @@ class FinansAlani(models.Model):
 
 def _finans_turu_alan(instance):
     if not instance.finans_alani_id and instance.kullanici_id and instance.finans_turu:
-        instance.finans_alani = FinansAlani.objects.filter(
-            kullanici_id=instance.kullanici_id,
-            id=instance.finans_turu,
-        ).first()
+        try:
+            finans_alani_id = int(instance.finans_turu)
+        except (TypeError, ValueError):
+            finans_alani_id = None
+
+        if finans_alani_id:
+            instance.finans_alani = FinansAlani.objects.filter(
+                kullanici_id=instance.kullanici_id,
+                id=finans_alani_id,
+            ).first()
     if instance.finans_alani_id:
         return str(instance.finans_alani_id)
     return instance.finans_turu or FINANS_KISISEL

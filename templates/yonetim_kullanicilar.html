@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Kullanıcı Yönetimi{% endblock %}
+{% block page_title %}Kullanıcı Yönetimi{% endblock %}
+{% block page_subtitle %}Kayıtlı kullanıcıları arayın, filtreleyin ve detaylarını inceleyin.{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form class="row g-3 align-items-end" method="get">
+            <div class="col-12 col-md-6">
+                <label class="form-label" for="q">Arama</label>
+                <input class="form-control" id="q" name="q" value="{{ arama }}" placeholder="Kullanıcı adı veya e-posta">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="durum">Durum</label>
+                <select class="form-select" id="durum" name="durum">
+                    <option value="" {% if not durum %}selected{% endif %}>Tümü</option>
+                    <option value="aktif" {% if durum == "aktif" %}selected{% endif %}>Aktif</option>
+                    <option value="pasif" {% if durum == "pasif" %}selected{% endif %}>Pasif</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-3 d-grid d-md-flex gap-2">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Filtrele</button>
+                <a class="btn btn-outline-secondary" href="{% url 'yonetim_kullanicilar' %}">Temizle</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <strong>Kullanıcılar</strong>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'yonetim' %}">Panele Dön</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Kullanıcı Adı</th>
+                        <th>E-posta</th>
+                        <th>Kayıt Tarihi</th>
+                        <th>Son Giriş</th>
+                        <th>Durum</th>
+                        <th class="text-end">Gelir</th>
+                        <th class="text-end">Gider</th>
+                        <th class="text-end">Kategori</th>
+                        <th class="text-end">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kayit in kullanici_kayitlari %}
+                        <tr>
+                            <td class="fw-semibold">
+                                {{ kayit.kullanici.username }}
+                                {% if kayit.kullanici.is_superuser %}
+                                    <span class="badge text-bg-primary ms-1">Admin</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ kayit.kullanici.email|default:"-" }}</td>
+                            <td>{{ kayit.kullanici.date_joined|date:"d.m.Y H:i" }}</td>
+                            <td>{{ kayit.kullanici.last_login|date:"d.m.Y H:i"|default:"-" }}</td>
+                            <td>
+                                {% if kayit.kullanici.is_active %}
+                                    <span class="badge text-bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">{{ kayit.gelir_sayisi }}</td>
+                            <td class="text-end">{{ kayit.gider_sayisi }}</td>
+                            <td class="text-end">{{ kayit.kategori_sayisi }}</td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a class="btn btn-outline-primary" href="{% url 'yonetim_kullanici_detay' kayit.kullanici.id %}">Detay</a>
+                                    {% if kayit.kullanici.id != request.user.id %}
+                                        <a class="btn btn-outline-danger" href="{% url 'yonetim_kullanici_sil' kayit.kullanici.id %}">Sil</a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="9" class="text-center text-muted py-4">Kullanıcı bulunamadı.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if sayfa.paginator.num_pages > 1 %}
+        <div class="card-footer bg-white">
+            <nav aria-label="Kullanıcı sayfaları">
+                <ul class="pagination mb-0 flex-wrap">
+                    {% if sayfa.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?q={{ arama }}&durum={{ durum }}&sayfa={{ sayfa.previous_page_number }}">Önceki</a></li>
+                    {% endif %}
+                    <li class="page-item active"><span class="page-link">{{ sayfa.number }} / {{ sayfa.paginator.num_pages }}</span></li>
+                    {% if sayfa.has_next %}
+                        <li class="page-item"><a class="page-link" href="?q={{ arama }}&durum={{ durum }}&sayfa={{ sayfa.next_page_number }}">Sonraki</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

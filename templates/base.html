@@ -40,6 +40,9 @@
 
             <nav class="nav flex-column gap-1">
                 <a class="nav-link" href="/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+                {% if request.user.is_superuser %}
+                    <a class="nav-link" href="/yonetim/"><i class="bi bi-shield-lock"></i>Yönetim Paneli</a>
+                {% endif %}
                 <a class="nav-link" href="/finans-alanlari/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-collection"></i>Finans Alanları</a>
                 <a class="nav-link" href="/gelir-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-down-circle"></i>Gelirler</a>
                 <a class="nav-link" href="/gider-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-up-circle"></i>Giderler</a>
@@ -76,6 +79,9 @@
             <div class="offcanvas-body">
                 <nav class="nav flex-column gap-1">
                     <a class="nav-link" href="/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-grid-1x2-fill"></i>Dashboard</a>
+                    {% if request.user.is_superuser %}
+                        <a class="nav-link" href="/yonetim/"><i class="bi bi-shield-lock"></i>Yönetim Paneli</a>
+                    {% endif %}
                     <a class="nav-link" href="/finans-alanlari/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-collection"></i>Finans Alanları</a>
                     <a class="nav-link" href="/gelir-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-down-circle"></i>Gelirler</a>
                     <a class="nav-link" href="/gider-ekle/?finans_turu={{ secilen_finans_turu|default:"kisisel" }}"><i class="bi bi-arrow-up-circle"></i>Giderler</a>

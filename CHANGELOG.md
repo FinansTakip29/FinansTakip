@@ -44,6 +44,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Kullanıcıya ve finans türüne özel kategori bazlı bütçe hedefleri, birikim hedefleri, hedefe katkı işlemi ve finansal sağlık öneri motoru eklendi.
 - PWA dashboard için hızlı harcama ekleme kartı, `/hizli-gider-ekle/` endpoint'i ve manifest hızlı erişim shortcut'ı eklendi.
 - Sabit finans türü sistemi yerine kullanıcının istediği kadar alan oluşturabildiği Finans Alanı sistemi, alan yönetimi ekranları ve eski finans türü verilerini yeni alanlara taşıyan migration eklendi.
+- Sadece superuser kullanıcıların erişebildiği özel yönetim paneli, kullanıcı listesi, kullanıcı detay ekranı ve CSRF korumalı güvenli kullanıcı silme onay akışı eklendi.
 
 ### Düzeltildi
 - Production ortamında `DATABASE_URL` zorunlu hale getirildi; `DEBUG=False` iken PostgreSQL dışındaki veritabanlarına veya SQLite fallback'ine düşülmesi engellendi.

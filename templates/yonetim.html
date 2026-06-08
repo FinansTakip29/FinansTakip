@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Yönetim Paneli{% endblock %}
+{% block page_title %}Yönetim Paneli{% endblock %}
+{% block page_subtitle %}Kullanıcılar ve sistem kayıtları için güvenli yönetim alanı.{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="h5 fw-bold mb-1">Sistem Özeti</h2>
+        <p class="text-muted mb-0">Sadece yetkili yöneticiler bu alanı görüntüleyebilir.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'yonetim_kullanicilar' %}">
+        <i class="bi bi-people me-1"></i>Kullanıcıları Yönet
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Toplam Kullanıcı</div>
+                <div class="display-6 fw-bold">{{ toplam_kullanici }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Aktif Kullanıcı</div>
+                <div class="display-6 fw-bold text-success">{{ aktif_kullanici }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Pasif Kullanıcı</div>
+                <div class="display-6 fw-bold text-secondary">{{ pasif_kullanici }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small">Bugün Kayıt</div>
+                <div class="display-6 fw-bold text-primary">{{ bugun_kayit }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-4 col-xl-2">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">Gelir</div><div class="h3 fw-bold">{{ toplam_gelir }}</div></div></div>
+    </div>
+    <div class="col-6 col-lg-4 col-xl-2">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">Gider</div><div class="h3 fw-bold">{{ toplam_gider }}</div></div></div>
+    </div>
+    <div class="col-6 col-lg-4 col-xl-2">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">Kategori</div><div class="h3 fw-bold">{{ toplam_kategori }}</div></div></div>
+    </div>
+    <div class="col-6 col-lg-4 col-xl-2">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">Bütçe</div><div class="h3 fw-bold">{{ toplam_butce }}</div></div></div>
+    </div>
+    <div class="col-6 col-lg-4 col-xl-2">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">Tekrarlayan</div><div class="h3 fw-bold">{{ toplam_tekrarlayan_odeme }}</div></div></div>
+    </div>
+    <div class="col-6 col-lg-4 col-xl-2">
+        <div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted small">Birikim</div><div class="h3 fw-bold">{{ toplam_birikim_hedefi }}</div></div></div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <strong>Son Kayıt Olan 10 Kullanıcı</strong>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'yonetim_kullanicilar' %}">Tümünü Gör</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Kullanıcı</th>
+                        <th>E-posta</th>
+                        <th>Kayıt Tarihi</th>
+                        <th>Durum</th>
+                        <th class="text-end">Kayıtlar</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kayit in son_kullanicilar %}
+                        <tr>
+                            <td class="fw-semibold">{{ kayit.kullanici.username }}</td>
+                            <td>{{ kayit.kullanici.email|default:"-" }}</td>
+                            <td>{{ kayit.kullanici.date_joined|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                {% if kayit.kullanici.is_active %}
+                                    <span class="badge text-bg-success">Aktif</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Pasif</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">{{ kayit.gelir_sayisi }} gelir / {{ kayit.gider_sayisi }} gider</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'yonetim_kullanici_detay' kayit.kullanici.id %}">Detay</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Kullanıcı bulunamadı.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

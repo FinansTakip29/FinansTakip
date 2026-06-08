@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Kullanıcı Detayı{% endblock %}
+{% block page_title %}Kullanıcı Detayı{% endblock %}
+{% block page_subtitle %}Kullanıcının hesap bilgileri ve finans kayıt özeti.{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="h5 fw-bold mb-1">{{ hedef_kullanici.username }}</h2>
+        <p class="text-muted mb-0">{{ hedef_kullanici.email|default:"E-posta tanımlı değil" }}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'yonetim_kullanicilar' %}">Listeye Dön</a>
+        {% if hedef_kullanici.id != request.user.id %}
+            <a class="btn btn-outline-danger" href="{% url 'yonetim_kullanici_sil' hedef_kullanici.id %}">
+                <i class="bi bi-trash me-1"></i>Kullanıcıyı Sil
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white"><strong>Kullanıcı Bilgileri</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted">Kullanıcı</dt><dd class="col-7">{{ hedef_kullanici.username }}</dd>
+                    <dt class="col-5 text-muted">E-posta</dt><dd class="col-7">{{ hedef_kullanici.email|default:"-" }}</dd>
+                    <dt class="col-5 text-muted">Kayıt</dt><dd class="col-7">{{ hedef_kullanici.date_joined|date:"d.m.Y H:i" }}</dd>
+                    <dt class="col-5 text-muted">Son Giriş</dt><dd class="col-7">{{ hedef_kullanici.last_login|date:"d.m.Y H:i"|default:"-" }}</dd>
+                    <dt class="col-5 text-muted">Durum</dt>
+                    <dd class="col-7">
+                        {% if hedef_kullanici.is_active %}
+                            <span class="badge text-bg-success">Aktif</span>
+                        {% else %}
+                            <span class="badge text-bg-secondary">Pasif</span>
+                        {% endif %}
+                        {% if hedef_kullanici.is_superuser %}
+                            <span class="badge text-bg-primary">Admin</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-8">
+        <div class="row g-3">
+            <div class="col-6 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Gelir</div><div class="h3 fw-bold">{{ gelir_sayisi }}</div></div></div></div>
+            <div class="col-6 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Gider</div><div class="h3 fw-bold">{{ gider_sayisi }}</div></div></div></div>
+            <div class="col-6 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Kategori</div><div class="h3 fw-bold">{{ kategori_sayisi }}</div></div></div></div>
+            <div class="col-6 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Bütçe</div><div class="h3 fw-bold">{{ butce_hedefleri|length }}</div></div></div></div>
+            <div class="col-6 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Tekrarlayan</div><div class="h3 fw-bold">{{ tekrarlayan_odemeler|length }}</div></div></div></div>
+            <div class="col-6 col-md-4"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted small">Birikim</div><div class="h3 fw-bold">{{ birikim_hedefleri|length }}</div></div></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-xl-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white"><strong>Son 10 Gelir</strong></div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead><tr><th>Tarih</th><th>Açıklama</th><th>Kategori</th><th class="text-end">Tutar</th></tr></thead>
+                    <tbody>
+                        {% for gelir in son_gelirler %}
+                            <tr><td>{{ gelir.tarih|date:"d.m.Y" }}</td><td>{{ gelir.aciklama }}</td><td>{{ gelir.kategori }}</td><td class="text-end">{{ gelir.tutar }} TL</td></tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">Gelir kaydı yok.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white"><strong>Son 10 Gider</strong></div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead><tr><th>Tarih</th><th>Açıklama</th><th>Kategori</th><th class="text-end">Tutar</th></tr></thead>
+                    <tbody>
+                        {% for gider in son_giderler %}
+                            <tr><td>{{ gider.tarih|date:"d.m.Y" }}</td><td>{{ gider.aciklama }}</td><td>{{ gider.kategori }}</td><td class="text-end">{{ gider.tutar }} TL</td></tr>
+                        {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">Gider kaydı yok.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white"><strong>Bütçe Hedefleri</strong></div>
+            <div class="card-body">
+                {% for hedef in butce_hedefleri %}
+                    <div class="d-flex justify-content-between border-bottom py-2"><span>{{ hedef.ay }}/{{ hedef.yil }}</span><strong>{{ hedef.hedef_tutar }} TL</strong></div>
+                {% empty %}
+                    <p class="text-muted mb-0">Bütçe hedefi yok.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white"><strong>Kategori Bütçeleri</strong></div>
+            <div class="card-body">
+                {% for hedef in kategori_butceleri %}
+                    <div class="d-flex justify-content-between border-bottom py-2"><span>{{ hedef.kategori.ad }} - {{ hedef.ay }}/{{ hedef.yil }}</span><strong>{{ hedef.hedef_tutar }} TL</strong></div>
+                {% empty %}
+                    <p class="text-muted mb-0">Kategori bütçesi yok.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white"><strong>Tekrarlayan Ödemeler</strong></div>
+            <div class="card-body">
+                {% for odeme in tekrarlayan_odemeler %}
+                    <div class="d-flex justify-content-between border-bottom py-2"><span>{{ odeme.odeme_adi }}</span><strong>{{ odeme.tutar }} TL</strong></div>
+                {% empty %}
+                    <p class="text-muted mb-0">Tekrarlayan ödeme yok.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white"><strong>Birikim Hedefleri</strong></div>
+            <div class="card-body">
+                {% for hedef in birikim_hedefleri %}
+                    <div class="d-flex justify-content-between border-bottom py-2"><span>{{ hedef.hedef_adi }}</span><strong>{{ hedef.mevcut_tutar }} / {{ hedef.hedef_tutar }} TL</strong></div>
+                {% empty %}
+                    <p class="text-muted mb-0">Birikim hedefi yok.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
