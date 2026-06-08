@@ -48,6 +48,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Deploy sırasında `ADMIN_USERNAME`, `ADMIN_EMAIL` ve `ADMIN_PASSWORD` environment variable değerleriyle ilk superuser hesabını oluşturan idempotent yönetim komutu eklendi.
 
 ### Düzeltildi
+- Kayıt akışı Django `auth.User` tablosuna doğrudan `create_user` ile yazacak, kayıt sonrası varlığı doğrulayacak, hata/başarı mesajı gösterecek ve şifresiz veritabanı hedef logu üretecek şekilde güçlendirildi.
 - Özel yönetim panelinde kullanıcı listesi doğrudan Django `auth.User` tablosundan boş filtrede tüm kullanıcıları en yeni kayıt ilk sırada gösterecek şekilde düzeltildi.
 - Production ortamında `DATABASE_URL` zorunlu hale getirildi; `DEBUG=False` iken PostgreSQL dışındaki veritabanlarına veya SQLite fallback'ine düşülmesi engellendi.
 - Render production startup sürecinde migrationların otomatik uygulanması için deploy komutları `build.sh`, `start.sh`, `Procfile` ve `render.yaml` üzerinden düzenlendi.

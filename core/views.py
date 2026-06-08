@@ -10,13 +10,15 @@ from xml.sax.saxutils import escape
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Count, Q, Sum
 from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
@@ -64,6 +66,14 @@ def _log_view_errors(message):
         return wrapped
 
     return decorator
+
+
+def _safe_database_label():
+    db_settings = connection.settings_dict
+    engine = db_settings.get("ENGINE", "")
+    host = db_settings.get("HOST") or "local"
+    name = db_settings.get("NAME") or ""
+    return f"engine={engine} host={host} name={name}"
 
 
 def _superuser_required(view_func):
@@ -1560,17 +1570,66 @@ def kayit(request):
     if request.user.is_authenticated:
         return redirect("home")
 
-    if request.method == "POST":
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            kullanici = form.save()
-            _varsayilan_finans_alani(kullanici)
-            login(request, kullanici)
-            return redirect("home")
-    else:
-        form = UserCreationForm()
+    UserModel = get_user_model()
+    form = UserCreationForm()
+    form_errors = {}
+    form_values = {"username": "", "email": ""}
 
-    return render(request, "kayit.html", {"form": form})
+    if request.method == "POST":
+        username = (request.POST.get("username") or "").strip()
+        email = (request.POST.get("email") or "").strip()
+        password1 = request.POST.get("password1") or ""
+        password2 = request.POST.get("password2") or ""
+        form_values = {"username": username, "email": email}
+
+        if not username:
+            form_errors.setdefault("username", []).append("Kullanıcı adı zorunludur.")
+        elif UserModel.objects.filter(username=username).exists():
+            form_errors.setdefault("username", []).append("Bu kullanıcı adı zaten kullanılıyor.")
+
+        if not password1:
+            form_errors.setdefault("password1", []).append("Şifre zorunludur.")
+        else:
+            try:
+                validate_password(password1)
+            except ValidationError as hata:
+                form_errors.setdefault("password1", []).extend(hata.messages)
+        if password1 != password2:
+            form_errors.setdefault("password2", []).append("Şifreler uyuşmuyor.")
+
+        if not form_errors:
+            logger.info("Register DB target: %s", _safe_database_label())
+            kullanici = UserModel.objects.create_user(
+                username=username,
+                email=email,
+                password=password1,
+            )
+            kullanici.save()
+
+            if not UserModel.objects.filter(username=username).exists():
+                logger.error("User creation verification failed for username=%s", username)
+                form_errors.setdefault("__all__", []).append("Kullanıcı kaydı doğrulanamadı. Lütfen tekrar deneyin.")
+                return render(request, "kayit.html", {
+                    "form": form,
+                    "form_errors": form_errors,
+                    "genel_hatalar": form_errors.get("__all__", []),
+                    "form_values": form_values,
+                })
+
+            _varsayilan_finans_alani(kullanici)
+            logger.info("New user created: %s id=%s", kullanici.username, kullanici.id)
+            messages.success(request, "Hesabınız oluşturuldu. FinansTakip'e hoş geldiniz.")
+
+            authenticated_user = authenticate(request, username=username, password=password1)
+            login(request, authenticated_user or kullanici)
+            return redirect("home")
+
+    return render(request, "kayit.html", {
+        "form": form,
+        "form_errors": form_errors,
+        "genel_hatalar": form_errors.get("__all__", []),
+        "form_values": form_values,
+    })
 
 
 @never_cache
