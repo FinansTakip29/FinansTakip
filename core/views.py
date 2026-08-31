@@ -436,14 +436,23 @@ def _finans_alanlari(kullanici):
     return FinansAlani.objects.none()
 
 
+def _int_deger(deger):
+    try:
+        return int(deger)
+    except (TypeError, ValueError):
+        return None
+
+
 def _secilen_finans_alani(kullanici, veri):
     alanlar = _finans_alanlari(kullanici)
     secim = veri.get("finans_turu") or veri.get("finans_alani")
 
     if secim:
-        alan = alanlar.filter(id=secim).first()
-        if alan:
-            return alan
+        secim_id = _int_deger(secim)
+        if secim_id:
+            alan = alanlar.filter(id=secim_id).first()
+            if alan:
+                return alan
 
         eski_ad = ESKI_FINANS_ALANI_ADLARI.get(secim)
         if eski_ad:
@@ -466,7 +475,20 @@ def _secilen_finans_turu(veri, kullanici=None):
 
 
 def _finans_alani_by_id(kullanici, finans_turu):
-    return _finans_alanlari(kullanici).filter(id=finans_turu).first() or _varsayilan_finans_alani(kullanici)
+    alanlar = _finans_alanlari(kullanici)
+    finans_alani_id = _int_deger(finans_turu)
+    if finans_alani_id:
+        alan = alanlar.filter(id=finans_alani_id).first()
+        if alan:
+            return alan
+
+    eski_ad = ESKI_FINANS_ALANI_ADLARI.get(finans_turu)
+    if eski_ad:
+        alan = alanlar.filter(ad=eski_ad).first()
+        if alan:
+            return alan
+
+    return alanlar.first() or _varsayilan_finans_alani(kullanici)
 
 
 def _finans_turu_context(finans_turu, kullanici=None):
@@ -1396,6 +1418,7 @@ def _append_rows(sheet, headers, rows):
 
 @login_required
 def yedekleme(request):
+    finans_turu = _secilen_finans_turu(request.GET, request.user)
     context = {
         "gelir_sayisi": Gelir.objects.filter(kullanici=request.user).count(),
         "gider_sayisi": Gider.objects.filter(kullanici=request.user).count(),
@@ -1406,7 +1429,7 @@ def yedekleme(request):
         "tekrarlayan_odeme_sayisi": TekrarlayanOdeme.objects.filter(kullanici=request.user).count(),
         "odeme_donemi_sayisi": OdemeDonemi.objects.filter(tekrarlayan_odeme__kullanici=request.user).count(),
     }
-    context.update(_finans_turu_context(FINANS_KISISEL, request.user))
+    context.update(_finans_turu_context(finans_turu, request.user))
     return render(request, "yedekleme.html", context)
 
 
