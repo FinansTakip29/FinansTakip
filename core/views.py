@@ -1105,6 +1105,73 @@ def _parse_int(value, default):
         return default
 
 
+def _kategori_anahtari(ad):
+    return " ".join(ad.split()).casefold()
+
+
+def _toplu_kategorileri_ekle(kullanici, finans_turu, tur, satirlar):
+    if tur not in [Kategori.GELIR, Kategori.GIDER]:
+        return {
+            "hata": "Lütfen toplu kategori için geçerli bir kategori türü seçin.",
+            "eklenen": 0,
+            "atlanan": 0,
+        }
+
+    adaylar = []
+    gorulenler = set()
+    for satir in satirlar.splitlines():
+        ad = " ".join(satir.strip().split())
+        if not ad:
+            continue
+
+        anahtar = _kategori_anahtari(ad)
+        if anahtar in gorulenler:
+            continue
+
+        gorulenler.add(anahtar)
+        adaylar.append(ad)
+
+    if not adaylar:
+        return {
+            "hata": "Toplu ekleme için en az bir geçerli kategori adı yazın.",
+            "eklenen": 0,
+            "atlanan": 0,
+        }
+
+    mevcut_anahtarlar = {
+        _kategori_anahtari(ad)
+        for ad in Kategori.objects.filter(
+            kullanici=kullanici,
+            finans_turu=finans_turu,
+            tur=tur,
+        ).values_list("ad", flat=True)
+    }
+
+    eklenen = 0
+    atlanan = 0
+    with transaction.atomic():
+        for ad in adaylar:
+            anahtar = _kategori_anahtari(ad)
+            if anahtar in mevcut_anahtarlar:
+                atlanan += 1
+                continue
+
+            Kategori.objects.create(
+                kullanici=kullanici,
+                finans_turu=finans_turu,
+                ad=ad,
+                tur=tur,
+            )
+            mevcut_anahtarlar.add(anahtar)
+            eklenen += 1
+
+    return {
+        "hata": None,
+        "eklenen": eklenen,
+        "atlanan": atlanan,
+    }
+
+
 def _backup_payload(kullanici):
     kategoriler = Kategori.objects.filter(kullanici=kullanici).order_by("finans_turu", "tur", "ad")
     gelirler = Gelir.objects.filter(kullanici=kullanici).order_by("tarih", "id")
@@ -2221,16 +2288,33 @@ def kategoriler(request):
     hata = None
 
     if request.method == "POST":
-        ad = request.POST.get("ad", "").strip()
-        tur = request.POST.get("tur")
-
-        if not ad or tur not in [Kategori.GELIR, Kategori.GIDER]:
-            hata = "Lütfen kategori adı ve türünü doğru girin."
-        elif Kategori.objects.filter(kullanici=request.user, finans_turu=finans_turu, ad=ad, tur=tur).exists():
-            hata = "Bu kategori zaten mevcut."
+        islem = request.POST.get("islem")
+        if islem == "toplu_kategori_ekle":
+            sonuc = _toplu_kategorileri_ekle(
+                request.user,
+                finans_turu,
+                request.POST.get("toplu_tur"),
+                request.POST.get("kategori_adlari", ""),
+            )
+            if sonuc["hata"]:
+                hata = sonuc["hata"]
+            else:
+                if sonuc["eklenen"]:
+                    messages.success(request, f"{sonuc['eklenen']} kategori başarıyla eklendi.")
+                if sonuc["atlanan"]:
+                    messages.info(request, f"{sonuc['atlanan']} kategori zaten mevcut olduğu için atlandı.")
+                return redirect(f"/kategoriler/?finans_turu={finans_turu}")
         else:
-            Kategori.objects.create(kullanici=request.user, finans_turu=finans_turu, ad=ad, tur=tur)
-            return redirect(f"/kategoriler/?finans_turu={finans_turu}")
+            ad = request.POST.get("ad", "").strip()
+            tur = request.POST.get("tur")
+
+            if not ad or tur not in [Kategori.GELIR, Kategori.GIDER]:
+                hata = "Lütfen kategori adı ve türünü doğru girin."
+            elif Kategori.objects.filter(kullanici=request.user, finans_turu=finans_turu, ad=ad, tur=tur).exists():
+                hata = "Bu kategori zaten mevcut."
+            else:
+                Kategori.objects.create(kullanici=request.user, finans_turu=finans_turu, ad=ad, tur=tur)
+                return redirect(f"/kategoriler/?finans_turu={finans_turu}")
 
     kullanici_kategorileri = Kategori.objects.filter(
         kullanici=request.user,

@@ -46,6 +46,7 @@ Bu dosya, FinansTakip projesindeki önemli değişiklikleri listeler.
 - Sabit finans türü sistemi yerine kullanıcının istediği kadar alan oluşturabildiği Finans Alanı sistemi, alan yönetimi ekranları ve eski finans türü verilerini yeni alanlara taşıyan migration eklendi.
 - Sadece superuser kullanıcıların erişebildiği özel yönetim paneli, kullanıcı listesi, kullanıcı detay ekranı ve CSRF korumalı güvenli kullanıcı silme onay akışı eklendi.
 - Deploy sırasında `ADMIN_USERNAME`, `ADMIN_EMAIL` ve `ADMIN_PASSWORD` environment variable değerleriyle ilk superuser hesabını oluşturan idempotent yönetim komutu eklendi.
+- Kategoriler sayfasına seçili finans alanı ve kategori türü için mükerrerleri atlayan toplu kategori ekleme modalı eklendi.
 
 ### Düzeltildi
 - Yedekleme sayfasında legacy `kisisel` finans alanı değerinin integer id filtresine verilmesi nedeniyle oluşan production 500 hatası düzeltildi.

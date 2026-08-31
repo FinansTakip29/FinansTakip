@@ -12,7 +12,12 @@
 <div class="row g-4">
     <div class="col-xl-4">
         <div class="card p-4">
-            <h2 class="section-title">Kategori Ekle</h2>
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                <h2 class="section-title mb-0">Kategori Ekle</h2>
+                <button class="btn btn-outline-primary btn-sm btn-icon" type="button" data-bs-toggle="modal" data-bs-target="#topluKategoriModal">
+                    <i class="bi bi-list-plus"></i>Toplu Ekle
+                </button>
+            </div>
             <form method="POST" class="d-grid gap-3">
                 {% csrf_token %}
                 <div>
@@ -84,6 +89,54 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="topluKategoriModal" tabindex="-1" aria-labelledby="topluKategoriModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="islem" value="toplu_kategori_ekle">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title h5 fw-bold" id="topluKategoriModalLabel">Toplu Kategori Ekle</h2>
+                        <div class="text-muted small">Seçili finans alanına birden fazla kategori ekle.</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Finans Alanı</label>
+                            <select name="finans_turu" class="form-select" required>
+                                {% for deger, etiket in finans_turleri %}
+                                    <option value="{{ deger }}" {% if secilen_finans_turu == deger %}selected{% endif %}>{{ etiket }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Kategori Türü</label>
+                            <select name="toplu_tur" class="form-select" required>
+                                <option value="gider">Gider</option>
+                                <option value="gelir">Gelir</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="kategori_adlari">Kategori Adları</label>
+                            <textarea id="kategori_adlari" name="kategori_adlari" class="form-control" rows="8" placeholder="Market&#10;Akaryakıt&#10;Elektrik&#10;Su&#10;Doğalgaz"></textarea>
+                            <div class="form-text">Her satıra bir kategori adı yazın.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer d-grid d-sm-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" class="btn btn-primary btn-icon justify-content-center">
+                        <i class="bi bi-check2-circle"></i>Kategorileri Ekle
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
